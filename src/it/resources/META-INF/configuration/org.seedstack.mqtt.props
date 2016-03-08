@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+
+[org.seedstack.mqtt]
+clients = client1, client2
+client.client1.server-uri = tcp://localhost:1883
+client.client1.client-id = id1
+#client.client1.mqtt-options.property.cleanSession = false
+client.client1.reconnection.interval = 5
+#client.client1.reconnection.mode = NONE
+
+
+client.client2.server-uri = tcp://localhost:1883
+client.client2.client-id = id2
+
+[]
+test.dest1.name = topic
+test.dest1.qos = 1
+test.dest2.name = xxx
+test.dest2.qos = 1
