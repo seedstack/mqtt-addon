@@ -60,7 +60,7 @@ class MqttCallbackAdapter implements MqttCallback {
 
     @Override
     public void connectionLost(Throwable cause) {
-        LOGGER.warn("Connexion MQTT lost for client: {}", mqttClient.getClientId(), cause);
+        LOGGER.warn("MQTT connection lost for client: {}", mqttClient.getClientId(), cause);
         switch (clientDefinition.getReconnectionMode()) {
         case NONE:
             break;
@@ -86,7 +86,7 @@ class MqttCallbackAdapter implements MqttCallback {
             @Override
             public void run() {
                 try {
-                    LOGGER.info("Trying to reconnect {}", mqttClient.getClientId());
+                    LOGGER.debug("Trying to reconnect {}", mqttClient.getClientId());
                     MqttClientUtils.connect(mqttClient, clientDefinition);
                     LOGGER.info("Client {} is now reconnected", mqttClient.getClientId());
                     if (clientDefinition.getListenerDefinition() != null) {
@@ -94,7 +94,9 @@ class MqttCallbackAdapter implements MqttCallback {
                     }
                     timer.cancel();
                 } catch (MqttSecurityException e) {
+                    LOGGER.trace("Can not reconnect mqttclient {}", mqttClient.getClientId(), e);
                 } catch (MqttException e) {
+                    LOGGER.trace("Can not reconnect mqttclient {}", mqttClient.getClientId(), e);
                 }
 
             }

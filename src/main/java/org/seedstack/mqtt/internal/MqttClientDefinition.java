@@ -21,7 +21,7 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
  * @author thierry.bouvet@mpsa.com
  *
  */
-public class MqttClientDefinition {
+class MqttClientDefinition {
 
     private String uri;
     private String clientId;

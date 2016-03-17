@@ -18,10 +18,11 @@ import org.seedstack.seed.ErrorCode;
  * @author thierry.bouvet@mpsa.com
  *
  */
-public enum MqttErrorCodes implements ErrorCode {
+enum MqttErrorCodes implements ErrorCode {
     MISCONFIGURED_MQTT_CLIENT,
     CAN_NOT_CREATE_MQTT_CLIENT,
     MQTT_LISTENER_CLIENT_NOT_FOUND,
+    MQTT_PUBLISHER_CLIENT_NOT_FOUND,
     CAN_NOT_CONNECT_MQTT_CLIENT,
     CAN_NOT_CONNECT_SUBSCRIBE,
     TOPICS_QOS_NOT_EQUAL,

@@ -24,7 +24,7 @@ import org.seedstack.mqtt.MqttPublishHandler;
  * @author thierry.bouvet@mpsa.com
  *
  */
-public enum MqttReconnectionMode {
+enum MqttReconnectionMode {
 
     NONE, ALWAYS, CUSTOM
 }

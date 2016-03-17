@@ -18,7 +18,7 @@ import org.eclipse.paho.client.mqttv3.MqttCallback;
  * @author thierry.bouvet@mpsa.com
  *
  */
-public class MqttListenerDefinition {
+class MqttListenerDefinition {
 
     private String[] topicFilter;
     private String className;

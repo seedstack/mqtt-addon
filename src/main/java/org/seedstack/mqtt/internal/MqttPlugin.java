@@ -162,8 +162,7 @@ public class MqttPlugin extends AbstractPlugin {
                 }
                 client.close();
             } catch (MqttException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                LOGGER.error("Can not disconnect MQTT client: {}", client.getClientId(), e);
             }
         }
         super.stop();
@@ -186,8 +185,6 @@ public class MqttPlugin extends AbstractPlugin {
 
     private void configureMqttClients() {
         String[] clients = mqttConfiguration.getStringArray(CONNECTION_CLIENTS);
-        if (clients == null)
-            return;
 
         for (String clientName : clients) {
             LOGGER.debug("Configure new MqttClient [{}]", clientName);
@@ -199,10 +196,12 @@ public class MqttPlugin extends AbstractPlugin {
             }
             if (clientId == null) {
                 clientId = MqttClient.generateClientId();
+                LOGGER.debug("Generate new client id [{}] for client [{}]", clientId, clientName);
             }
+
             MqttClientDefinition def = new MqttClientDefinition(uri, clientId);
             Configuration reconnectConfiguration = clientConfiguration.subset(RECONNECTION_PROPS);
-            if (reconnectConfiguration != null) {
+            if (!reconnectConfiguration.isEmpty()) {
                 try {
                     String reconnection = reconnectConfiguration.getString(RECONNECTION_MODE);
                     if (reconnection != null) {
