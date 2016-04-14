@@ -22,7 +22,7 @@ import org.eclipse.paho.client.mqttv3.MqttSecurityException;
  * @author thierry.bouvet@mpsa.com
  *
  */
-public class MqttClientUtils {
+class MqttClientUtils {
 
     /**
      * Connect a new {@link MqttClient} to a broker.

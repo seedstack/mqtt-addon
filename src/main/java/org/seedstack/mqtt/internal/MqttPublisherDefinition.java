@@ -18,7 +18,7 @@ import org.eclipse.paho.client.mqttv3.MqttCallback;
  * @author thierry.bouvet@mpsa.com
  *
  */
-public class MqttPublisherDefinition {
+class MqttPublisherDefinition {
 
     private String className;
     private Class<? extends MqttCallback> listenerClass;

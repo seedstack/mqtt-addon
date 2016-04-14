@@ -62,7 +62,6 @@ class MqttModule extends AbstractModule {
             } catch (MqttException e) {
                 throw SeedException.wrap(e, MqttErrorCodes.CAN_NOT_CONNECT_MQTT_CLIENT).put("clientName", clientName);
             }
-            // options.setWill("LWT", "I'm gone".getBytes(), 2, true);
             MqttPublisherDefinition publisherDefinition = clientDefinition.getPublisherDefinition();
             if (publisherDefinition != null) {
                 registerPublisHandler(callbackAdapter, publisherDefinition);

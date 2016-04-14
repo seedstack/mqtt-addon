@@ -7,16 +7,16 @@
 #
 
 [org.seedstack.mqtt]
-clients = client1, client2
+clients = client1, client2, clientOK1
 client.client1.server-uri = tcp://localhost:1883
 client.client1.client-id = id1
-#client.client1.mqtt-options.property.cleanSession = false
+client.client1.mqtt-options.property.cleanSession = false
 client.client1.reconnection.interval = 5
 #client.client1.reconnection.mode = NONE
 
 
 client.client2.server-uri = tcp://localhost:1883
-client.client2.client-id = id2
+client.clientOK1.server-uri = tcp://localhost:1883
 
 []
 test.dest1.name = topic

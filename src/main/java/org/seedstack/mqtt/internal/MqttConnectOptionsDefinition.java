@@ -21,7 +21,7 @@ import org.seedstack.seed.core.utils.SeedBeanUtils;
  * @author thierry.bouvet@mpsa.com
  *
  */
-public class MqttConnectOptionsDefinition {
+class MqttConnectOptionsDefinition {
 
     private Configuration configuration;
 
@@ -44,7 +44,7 @@ public class MqttConnectOptionsDefinition {
      */
     public MqttConnectOptions getMqttConnectOptions() {
         MqttConnectOptions options = null;
-        if (configuration != null) {
+        if (!configuration.subset("property").isEmpty()) {
             options = new MqttConnectOptions();
             SeedBeanUtils.setPropertiesFromConfiguration(options, configuration, "property");
         }
