@@ -30,6 +30,7 @@ class MqttClientDefinition {
     private MqttPublisherDefinition publisherDefinition;
     private MqttConnectOptionsDefinition connectOptionsDefinition;
     private MqttReconnectionMode reconnectionMode = MqttReconnectionMode.ALWAYS;
+    private MqttPoolDefinition poolDefinition;
     private int reconnectionInterval = 2;
 
     /**
@@ -91,6 +92,14 @@ class MqttClientDefinition {
 
     public void setReconnectionInterval(int reconnectionInterval) {
         this.reconnectionInterval = reconnectionInterval;
+    }
+
+    public MqttPoolDefinition getPoolDefinition() {
+        return poolDefinition;
+    }
+
+    public void setPoolDefinition(MqttPoolDefinition poolDefinition) {
+        this.poolDefinition = poolDefinition;
     }
 
 }

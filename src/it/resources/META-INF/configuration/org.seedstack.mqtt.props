@@ -13,6 +13,11 @@ client.client1.client-id = id1
 client.client1.mqtt-options.property.cleanSession = false
 client.client1.reconnection.interval = 5
 #client.client1.reconnection.mode = NONE
+#client.client1.pool.enabled = false
+client.client1.pool.core = 5
+client.client1.pool.max = 5
+client.client1.pool.queue = 10
+client.client1.pool.keep-alive = 60
 
 
 client.client2.server-uri = tcp://localhost:1883

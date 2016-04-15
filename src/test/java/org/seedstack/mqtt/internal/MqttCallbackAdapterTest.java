@@ -12,6 +12,8 @@ package org.seedstack.mqtt.internal;
 
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -20,6 +22,8 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.MqttSecurityException;
 import org.junit.Test;
+import org.seedstack.mqtt.MqttRejectedExecutionHandler;
+import org.seedstack.seed.SeedException;
 
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -48,9 +52,15 @@ public class MqttCallbackAdapterTest {
     @Mocked
     Key<MqttCallback> publisherKey;
     @Mocked
+    Key<MqttRejectedExecutionHandler> rejectKey;
+    @Mocked
     MqttCallback listener;
     @Mocked
     MqttCallback publisher;
+    @Mocked
+    MqttRejectedExecutionHandler rejectHandler;
+    @Mocked
+    ThreadPoolExecutor threadPool;
 
     /**
      * Test method for
@@ -351,6 +361,107 @@ public class MqttCallbackAdapterTest {
                 listener.messageArrived(topic, mqttMessage);
             }
         };
+    }
+
+    /**
+     * Test method for
+     * {@link org.seedstack.mqtt.internal.MqttCallbackAdapter#messageArrived(java.lang.String, org.eclipse.paho.client.mqttv3.MqttMessage)}
+     * .
+     * 
+     * @throws Exception
+     *             if an error occurred
+     */
+    @Test
+    public void testMessageArrivedWithPool() throws Exception {
+        MqttClientDefinition clientDefinition = new MqttClientDefinition("uri", "id");
+        MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
+        final MqttMessage mqttMessage = new MqttMessage();
+        Deencapsulation.setField(callbackAdapter, "injector", injector);
+        callbackAdapter.setListenerKey(listenerKey);
+        callbackAdapter.setRejectHandlerKey(rejectKey);
+        callbackAdapter.setPool(threadPool);
+
+        new StrictExpectations() {
+            {
+                injector.getInstance(listenerKey);
+                result = listener;
+            }
+        };
+        final String topic = "topic";
+        callbackAdapter.messageArrived(topic, mqttMessage);
+
+        new Verifications() {
+            {
+                threadPool.submit((MqttListenerTask) any);
+            }
+        };
+    }
+
+    /**
+     * Test method for
+     * {@link org.seedstack.mqtt.internal.MqttCallbackAdapter#messageArrived(java.lang.String, org.eclipse.paho.client.mqttv3.MqttMessage)}
+     * .
+     * 
+     * @throws Exception
+     *             if an error occurred
+     */
+    @Test
+    public void testMessageArrivedWithPoolExceptionAndHandler() throws Exception {
+        MqttClientDefinition clientDefinition = new MqttClientDefinition("uri", "id");
+        MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
+        final MqttMessage mqttMessage = new MqttMessage();
+        Deencapsulation.setField(callbackAdapter, "injector", injector);
+        callbackAdapter.setListenerKey(listenerKey);
+        callbackAdapter.setRejectHandlerKey(rejectKey);
+        callbackAdapter.setPool(threadPool);
+
+        new Expectations() {
+            {
+                injector.getInstance(rejectKey);
+                result = rejectHandler;
+
+                threadPool.submit((MqttListenerTask) any);
+                result = new RejectedExecutionException("Fake exception");
+            }
+        };
+        final String topic = "topic";
+        callbackAdapter.messageArrived(topic, mqttMessage);
+
+        new Verifications() {
+            {
+                threadPool.submit((MqttListenerTask) any);
+
+                rejectHandler.reject(topic, mqttMessage);
+            }
+        };
+    }
+
+    /**
+     * Test method for
+     * {@link org.seedstack.mqtt.internal.MqttCallbackAdapter#messageArrived(java.lang.String, org.eclipse.paho.client.mqttv3.MqttMessage)}
+     * .
+     * 
+     * @throws Exception
+     *             if an error occurred
+     */
+    @Test(expected = SeedException.class)
+    public void testMessageArrivedWithPoolExceptionWithoutHandler() throws Exception {
+        MqttClientDefinition clientDefinition = new MqttClientDefinition("uri", "id");
+        MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
+        final MqttMessage mqttMessage = new MqttMessage();
+        Deencapsulation.setField(callbackAdapter, "injector", injector);
+        callbackAdapter.setListenerKey(listenerKey);
+        callbackAdapter.setPool(threadPool);
+
+        new StrictExpectations() {
+            {
+                threadPool.submit((MqttListenerTask) any);
+                result = new RejectedExecutionException("Fake exception");
+            }
+        };
+        final String topic = "topic";
+        callbackAdapter.messageArrived(topic, mqttMessage);
+
     }
 
     /**
