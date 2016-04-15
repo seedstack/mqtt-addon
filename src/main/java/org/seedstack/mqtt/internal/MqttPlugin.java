@@ -20,9 +20,12 @@ import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttSecurityException;
 import org.kametic.specifications.Specification;
 import org.seedstack.mqtt.MqttListener;
 import org.seedstack.mqtt.MqttPublishHandler;
+import org.seedstack.mqtt.MqttRejectHandler;
+import org.seedstack.mqtt.MqttRejectedExecutionHandler;
 import org.seedstack.seed.Application;
 import org.seedstack.seed.SeedException;
 import org.seedstack.seed.core.internal.application.ApplicationPlugin;
@@ -32,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Lists;
 
 import io.nuun.kernel.api.plugin.InitState;
+import io.nuun.kernel.api.plugin.context.Context;
 import io.nuun.kernel.api.plugin.context.InitContext;
 import io.nuun.kernel.api.plugin.request.ClasspathScanRequest;
 import io.nuun.kernel.core.AbstractPlugin;
@@ -52,6 +56,7 @@ public class MqttPlugin extends AbstractPlugin {
     private static final String RECONNECTION_INTERVAL = "interval";
     private static final String RECONNECTION_MODE = "mode";
     private static final String RECONNECTION_PROPS = "reconnection";
+    private static final String POOL_PROPS = "pool";
     private static final String MQTT_OPTIONS = "mqtt-options";
     private static final String MQTT_PLUGIN_CONFIGURATION_PREFIX = "org.seedstack.mqtt";
 
@@ -63,6 +68,9 @@ public class MqttPlugin extends AbstractPlugin {
     @SuppressWarnings("unchecked")
     private final Specification<Class<?>> mqttPublisherSpec = and(classImplements(MqttCallback.class),
             classAnnotatedWith(MqttPublishHandler.class));
+    @SuppressWarnings("unchecked")
+    private final Specification<Class<?>> mqttRejectHandlerSpec = and(
+            classImplements(MqttRejectedExecutionHandler.class), classAnnotatedWith(MqttRejectHandler.class));
 
     private Application application;
     private Configuration mqttConfiguration;
@@ -83,10 +91,29 @@ public class MqttPlugin extends AbstractPlugin {
 
         configureMqttListeners(initContext.scannedTypesBySpecification().get(mqttListenerSpec));
         configureMqttPublishers(initContext.scannedTypesBySpecification().get(mqttPublisherSpec));
+        configureMqttRejectHandler(initContext.scannedTypesBySpecification().get(mqttRejectHandlerSpec));
 
         registerMqttClients();
 
         return InitState.INITIALIZED;
+    }
+
+    private void configureMqttRejectHandler(Collection<Class<?>> candidates) {
+        for (Class<?> candidate : candidates) {
+            @SuppressWarnings("unchecked")
+            Class<? extends MqttRejectedExecutionHandler> rejectClass = (Class<? extends MqttRejectedExecutionHandler>) candidate;
+            String rejectName = rejectClass.getCanonicalName();
+            MqttRejectHandler annotation = rejectClass.getAnnotation(MqttRejectHandler.class);
+            if (!mqttClientDefinitions.containsKey(annotation.clientName())) {
+                throw SeedException.createNew(MqttErrorCodes.MQTT_REJECT_HANDLER_CLIENT_NOT_FOUND)
+                        .put("clientName", annotation.clientName()).put("rejectName", rejectName);
+            }
+            LOGGER.debug("New MqttRejectHandler callback found: [{}] for client [{}] ",
+                    new Object[] { rejectName, annotation.clientName() });
+
+            mqttClientDefinitions.get(annotation.clientName()).getPoolDefinition().setRejectHandler(rejectClass,
+                    rejectName);
+        }
     }
 
     private void configureMqttPublishers(Collection<Class<?>> candidates) {
@@ -145,8 +172,8 @@ public class MqttPlugin extends AbstractPlugin {
                 qosListSubstitute[i] = Integer.parseInt(application.substituteWithConfiguration(qosList[i]));
                 topicsSubstitute[i] = application.substituteWithConfiguration(topics[i]);
             }
-            LOGGER.debug("New MqttListener found: [{}] for client [{}] and topicFiler [{}]",
-                    new Object[] { mqttListenerName, annotation.clientName(), topics });
+            LOGGER.debug("New MqttListener found: [{}] for client [{}] and topicFiler {}",
+                    new Object[] { mqttListenerName, annotation.clientName(), topicsSubstitute });
 
             mqttClientDefinitions.get(annotation.clientName()).setListenerDefinition(new MqttListenerDefinition(
                     mqttListenerClass, mqttListenerName, topicsSubstitute, qosListSubstitute));
@@ -155,14 +182,22 @@ public class MqttPlugin extends AbstractPlugin {
 
     @Override
     public void stop() {
-        for (IMqttClient client : mqttClients.values()) {
+        for (Entry<String, IMqttClient> entry : mqttClients.entrySet()) {
+            IMqttClient client = entry.getValue();
+            String clientName = entry.getKey();
             try {
                 if (client.isConnected()) {
                     client.disconnect();
                 }
                 client.close();
+                LOGGER.debug("Disconect MqttClient [{}] ", clientName);
             } catch (MqttException e) {
-                LOGGER.error("Can not disconnect MQTT client: {}", client.getClientId(), e);
+                LOGGER.error("Can not disconnect MQTT client: {}", clientName, e);
+            }
+        }
+        for (MqttClientDefinition clientDefinition : mqttClientDefinitions.values()) {
+            if (clientDefinition.getPoolDefinition().getThreadPoolExecutor() != null) {
+                clientDefinition.getPoolDefinition().getThreadPoolExecutor().shutdown();
             }
         }
         super.stop();
@@ -180,7 +215,8 @@ public class MqttPlugin extends AbstractPlugin {
 
     @Override
     public Collection<ClasspathScanRequest> classpathScanRequests() {
-        return classpathScanRequestBuilder().specification(mqttListenerSpec).specification(mqttPublisherSpec).build();
+        return classpathScanRequestBuilder().specification(mqttListenerSpec).specification(mqttPublisherSpec)
+                .specification(mqttRejectHandlerSpec).build();
     }
 
     private void configureMqttClients() {
@@ -220,7 +256,40 @@ public class MqttPlugin extends AbstractPlugin {
             MqttConnectOptionsDefinition connectOptionsDefinition = new MqttConnectOptionsDefinition(
                     clientConfiguration.subset(MQTT_OPTIONS));
             def.setConnectOptionsDefinition(connectOptionsDefinition);
+
+            // Check ThreadPool Configuration
+            def.setPoolDefinition(new MqttPoolDefinition(clientConfiguration.subset(POOL_PROPS)));
+
             mqttClientDefinitions.put(clientName, def);
+        }
+    }
+
+    @Override
+    public void start(Context context) {
+        super.start(context);
+        for (Entry<String, MqttClientDefinition> entry : mqttClientDefinitions.entrySet()) {
+            String clientName = entry.getKey();
+            MqttClientDefinition clientDefinition = entry.getValue();
+            IMqttClient mqttClient = mqttClients.get(clientName);
+            try {
+                MqttClientUtils.connect(mqttClient, clientDefinition);
+                LOGGER.debug("Connect new MqttClient [{}] ", clientName);
+            } catch (MqttSecurityException e) {
+                throw SeedException.wrap(e, MqttErrorCodes.CAN_NOT_CONNECT_MQTT_CLIENT).put("clientName", clientName);
+            } catch (MqttException e) {
+                throw SeedException.wrap(e, MqttErrorCodes.CAN_NOT_CONNECT_MQTT_CLIENT).put("clientName", clientName);
+            }
+            MqttListenerDefinition listenerDefinition = clientDefinition.getListenerDefinition();
+            if (listenerDefinition != null) {
+                String[] topicFiler = listenerDefinition.getTopicFilter();
+                try {
+                    LOGGER.debug("Subscribe MqttClient [{}] to topicFiler {}", clientName, topicFiler);
+                    MqttClientUtils.subscribe(mqttClient, listenerDefinition);
+                } catch (MqttException e) {
+                    throw SeedException.wrap(e, MqttErrorCodes.CAN_NOT_CONNECT_SUBSCRIBE).put("clientName", clientName)
+                            .put("topic", topicFiler);
+                }
+            }
         }
     }
 }

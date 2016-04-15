@@ -12,6 +12,7 @@ package org.seedstack.mqtt.internal;
 
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import javax.inject.Inject;
 
@@ -21,6 +22,8 @@ import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.MqttSecurityException;
+import org.seedstack.mqtt.MqttRejectedExecutionHandler;
+import org.seedstack.seed.SeedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,8 +45,10 @@ class MqttCallbackAdapter implements MqttCallback {
 
     private Key<MqttCallback> listenerKey;
     private Key<MqttCallback> publisherKey;
+    private Key<MqttRejectedExecutionHandler> rejectHandlerKey;
     private IMqttClient mqttClient;
     private MqttClientDefinition clientDefinition;
+    private ThreadPoolExecutor pool;
 
     /**
      * Default constructor.
@@ -108,7 +113,19 @@ class MqttCallbackAdapter implements MqttCallback {
 
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
-        injector.getInstance(listenerKey).messageArrived(topic, message);
+        if (pool != null) {
+            try {
+                pool.submit(new MqttListenerTask(injector.getInstance(listenerKey), topic, message));
+            } catch (Exception e) {
+                if (this.rejectHandlerKey == null) {
+                    throw SeedException.wrap(e, MqttErrorCodes.LISTENER_ERROR);
+                }
+                injector.getInstance(this.rejectHandlerKey).reject(topic, message);
+            }
+        } else {
+            injector.getInstance(listenerKey).messageArrived(topic, message);
+        }
+
     }
 
     @Override
@@ -124,6 +141,14 @@ class MqttCallbackAdapter implements MqttCallback {
 
     public void setPublisherKey(Key<MqttCallback> publisherKey) {
         this.publisherKey = publisherKey;
+    }
+
+    public void setPool(ThreadPoolExecutor pool) {
+        this.pool = pool;
+    }
+
+    public void setRejectHandlerKey(Key<MqttRejectedExecutionHandler> rejectHandlerKey) {
+        this.rejectHandlerKey = rejectHandlerKey;
     }
 
 }

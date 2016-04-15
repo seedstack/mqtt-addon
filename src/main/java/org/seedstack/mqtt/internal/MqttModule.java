@@ -16,11 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttSecurityException;
-import org.seedstack.seed.SeedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.seedstack.mqtt.MqttRejectedExecutionHandler;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
@@ -33,8 +29,6 @@ import com.google.inject.name.Names;
  *
  */
 class MqttModule extends AbstractModule {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(MqttModule.class);
 
     private ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions;
     private ConcurrentHashMap<String, IMqttClient> mqttClients;
@@ -55,20 +49,14 @@ class MqttModule extends AbstractModule {
             bind(IMqttClient.class).annotatedWith(Names.named(clientName)).toInstance(mqttClient);
             MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
             mqttClient.setCallback(callbackAdapter);
-            try {
-                MqttClientUtils.connect(mqttClient, clientDefinition);
-            } catch (MqttSecurityException e) {
-                throw SeedException.wrap(e, MqttErrorCodes.CAN_NOT_CONNECT_MQTT_CLIENT).put("clientName", clientName);
-            } catch (MqttException e) {
-                throw SeedException.wrap(e, MqttErrorCodes.CAN_NOT_CONNECT_MQTT_CLIENT).put("clientName", clientName);
-            }
+
             MqttPublisherDefinition publisherDefinition = clientDefinition.getPublisherDefinition();
             if (publisherDefinition != null) {
                 registerPublisHandler(callbackAdapter, publisherDefinition);
             }
             MqttListenerDefinition listenerDefinition = clientDefinition.getListenerDefinition();
             if (listenerDefinition != null) {
-                registerListener(clientName, mqttClient, callbackAdapter, listenerDefinition);
+                registerListener(clientName, mqttClient, callbackAdapter, clientDefinition);
             }
         }
 
@@ -83,18 +71,19 @@ class MqttModule extends AbstractModule {
     }
 
     private void registerListener(String clientName, IMqttClient mqttClient, MqttCallbackAdapter callbackAdapter,
-            MqttListenerDefinition listenerDefinition) {
+            MqttClientDefinition clientDefinition) {
+        MqttListenerDefinition listenerDefinition = clientDefinition.getListenerDefinition();
         String className = listenerDefinition.getClassName();
         Class<? extends MqttCallback> clazz = listenerDefinition.getListenerClass();
         bind(MqttCallback.class).annotatedWith(Names.named(className)).to(clazz);
         callbackAdapter.setListenerKey(Key.get(MqttCallback.class, Names.named(className)));
-        String[] topicFiler = listenerDefinition.getTopicFilter();
-        try {
-            LOGGER.debug("Subscribe MqttClient [{}] to topicFiler {}", clientName, topicFiler);
-            MqttClientUtils.subscribe(mqttClient, listenerDefinition);
-        } catch (MqttException e) {
-            throw SeedException.wrap(e, MqttErrorCodes.CAN_NOT_CONNECT_SUBSCRIBE).put("clientName", clientName)
-                    .put("topic", topicFiler);
+        MqttPoolDefinition poolDefinition = clientDefinition.getPoolDefinition();
+        callbackAdapter.setPool(poolDefinition.getThreadPoolExecutor());
+        if (poolDefinition.getRejectHandlerClass() != null) {
+            String rejectName = poolDefinition.getRejectHandlerName();
+            Class<? extends MqttRejectedExecutionHandler> rejectClass = poolDefinition.getRejectHandlerClass();
+            bind(MqttRejectedExecutionHandler.class).annotatedWith(Names.named(rejectName)).to(rejectClass);
+            callbackAdapter.setRejectHandlerKey(Key.get(MqttRejectedExecutionHandler.class, Names.named(rejectName)));
         }
     }
 
