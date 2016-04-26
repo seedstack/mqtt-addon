@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import mockit.integration.junit4.JMockit;
 import org.apache.commons.configuration.Configuration;
 import org.assertj.core.api.Assertions;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
@@ -24,6 +25,7 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttSecurityException;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.kametic.specifications.Specification;
 import org.seedstack.mqtt.internal.fixtures.Listener1;
 import org.seedstack.mqtt.internal.fixtures.ListenerWithError;
@@ -48,6 +50,7 @@ import mockit.Verifications;
  * @author thierry.bouvet@mpsa.com
  *
  */
+@RunWith(JMockit.class)
 public class MqttPluginTest {
 
     private static final String MQTT_PLUGIN_CONFIGURATION_PREFIX = "org.seedstack.mqtt";

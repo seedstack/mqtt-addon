@@ -6,11 +6,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 /**
- * 
+ *
  */
 package org.seedstack.mqtt.fixtures;
-
-import java.nio.charset.StandardCharsets;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -19,9 +17,11 @@ import org.seedstack.mqtt.MqttListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.Charset;
+
 /**
  * {@link @MqttListener} fixture used to test Mqtt communication.
- * 
+ *
  * @author thierry.bouvet@mpsa.com
  *
  */
@@ -39,7 +39,7 @@ public class TestMqttListener implements MqttCallback {
 
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
-        messageReceived = new String(message.getPayload(), StandardCharsets.UTF_8);
+        messageReceived = new String(message.getPayload(), Charset.forName("UTF-8"));
         LOGGER.info("New message: {} {}", topic, messageReceived);
     }
 

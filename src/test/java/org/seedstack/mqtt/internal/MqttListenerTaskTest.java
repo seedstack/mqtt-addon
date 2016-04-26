@@ -7,15 +7,18 @@
  */
 package org.seedstack.mqtt.internal;
 
+import mockit.integration.junit4.JMockit;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.seedstack.seed.SeedException;
 
 import mockit.Expectations;
 import mockit.Mocked;
 import mockit.Verifications;
 
+@RunWith(JMockit.class)
 public class MqttListenerTaskTest {
 
     @Test

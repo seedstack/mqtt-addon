@@ -8,18 +8,14 @@
     file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 -->
-<!DOCTYPE configuration>
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
-    
-    <logger name="org.seedstack.mqtt" level="debug" />
-    <logger name="io.moquette" level="warn" />
-    
-    <root level="INFO">
-        <appender-ref ref="STDOUT" />
+
+    <root level="WARN">
+        <appender-ref ref="STDOUT"/>
     </root>
 </configuration>

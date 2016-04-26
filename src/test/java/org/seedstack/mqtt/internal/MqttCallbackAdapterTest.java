@@ -15,6 +15,7 @@ import java.util.TimerTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import mockit.integration.junit4.JMockit;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -22,6 +23,7 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.MqttSecurityException;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.seedstack.mqtt.MqttRejectedExecutionHandler;
 import org.seedstack.seed.SeedException;
 
@@ -41,6 +43,7 @@ import mockit.Verifications;
  * @author thierry.bouvet@mpsa.com
  *
  */
+@RunWith(JMockit.class)
 public class MqttCallbackAdapterTest {
 
     @Mocked

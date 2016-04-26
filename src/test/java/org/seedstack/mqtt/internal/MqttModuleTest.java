@@ -12,10 +12,12 @@ package org.seedstack.mqtt.internal;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import mockit.integration.junit4.JMockit;
 import org.apache.commons.configuration.Configuration;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.seedstack.mqtt.MqttRejectedExecutionHandler;
 import org.seedstack.mqtt.internal.fixtures.Listener1;
 import org.seedstack.mqtt.internal.fixtures.PublishHandler;
@@ -30,6 +32,7 @@ import mockit.Verifications;
  * @author thierry.bouvet@mpsa.com
  *
  */
+@RunWith(JMockit.class)
 public class MqttModuleTest {
 
     @Mocked

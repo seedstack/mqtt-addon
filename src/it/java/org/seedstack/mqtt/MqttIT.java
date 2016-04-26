@@ -6,20 +6,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 /**
- * 
+ *
  */
 package org.seedstack.mqtt;
 
-import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
-
-import javax.inject.Named;
-
+import com.google.inject.Inject;
+import io.moquette.server.Server;
 import org.assertj.core.api.Assertions;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -31,15 +23,19 @@ import org.seedstack.seed.it.AfterKernel;
 import org.seedstack.seed.it.BeforeKernel;
 import org.seedstack.seed.it.SeedITRunner;
 
-import com.google.inject.Inject;
-
-import io.moquette.server.Server;
+import javax.inject.Named;
+import java.io.File;
+import java.nio.charset.Charset;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Test publish/subscribe for {@link MqttClient}.
- * 
- * @author thierry.bouvet@mpsa.com
  *
+ * @author thierry.bouvet@mpsa.com
  */
 @RunWith(SeedITRunner.class)
 public class MqttIT {
@@ -82,7 +78,7 @@ public class MqttIT {
         });
 
         final String expected = "payload";
-        mqttClient.publish("topic", expected.getBytes(StandardCharsets.UTF_8), 1, false);
+        mqttClient.publish("topic", expected.getBytes(Charset.forName("UTF-8")), 1, false);
 
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         executorService.execute(task);

@@ -10,6 +10,7 @@
  */
 package org.seedstack.mqtt.internal;
 
+import mockit.integration.junit4.JMockit;
 import org.apache.commons.configuration.Configuration;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
@@ -18,11 +19,13 @@ import org.junit.Test;
 import mockit.Expectations;
 import mockit.Mocked;
 import mockit.Verifications;
+import org.junit.runner.RunWith;
 
 /**
  * @author thierry.bouvet@mpsa.com
  *
  */
+@RunWith(JMockit.class)
 public class MqttClientUtilsTest {
 
     @Mocked
