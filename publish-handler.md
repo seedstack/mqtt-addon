@@ -20,8 +20,6 @@ annotated with `@MqttPublishHandler`. This annotation takes the following parame
 
 With this class, the default reconnection behavior can be overridden.
  
-## Method to publish a message
-
 In a Java class, just inject your own client:
 
     @Inject
