@@ -15,6 +15,7 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttSecurityException;
+import org.seedstack.seed.SeedException;
 
 /**
  * Methods to connect a {@link MqttClient} and to subscribe to different topics.
@@ -62,6 +63,14 @@ class MqttClientUtils {
         String[] topicFiler = listenerDefinition.getTopicFilter();
         int[] qos = listenerDefinition.getQos();
         mqttClient.subscribe(topicFiler, qos);
+        // Fix PAHO bug: Test all qos values to throw an exception if one subscribe is not correct.
+        // the qos tab is updated if a subscribe is failed but test is only on the first item of the list.
+        for (int j = 0; j < qos.length; j++) {
+            if (qos[j] == 0x80) {
+                throw SeedException.wrap(new MqttException(MqttException.REASON_CODE_SUBSCRIBE_FAILED), MqttErrorCodes.SUBSCRIBE_FAILED)
+                .put("topic", topicFiler[j]);
+            }
+        }
 
     }
 }

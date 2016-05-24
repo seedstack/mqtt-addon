@@ -7,17 +7,14 @@
  */
 package org.seedstack.mqtt.fixtures;
 
+import java.util.concurrent.CountDownLatch;
+
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.seedstack.mqtt.MqttListener;
 import org.seedstack.mqtt.MqttPublishHandler;
-import org.seedstack.mqtt.MultiListenerIT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.nio.charset.Charset;
-import java.util.concurrent.CountDownLatch;
 
 @MqttPublishHandler(clients = {"client3", "client4"})
 public class DummyMqttPublisherListener implements MqttCallback {
