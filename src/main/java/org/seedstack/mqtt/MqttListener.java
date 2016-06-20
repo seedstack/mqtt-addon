@@ -29,9 +29,9 @@ import java.lang.annotation.Target;
 @Inherited
 public @interface MqttListener {
 
-    String clientName();
+    String[] clients();
 
-    String[] topicFilter();
+    String[] topics();
 
     String[] qos();
 

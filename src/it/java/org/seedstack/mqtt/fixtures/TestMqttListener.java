@@ -25,7 +25,7 @@ import java.nio.charset.Charset;
  * @author thierry.bouvet@mpsa.com
  *
  */
-@MqttListener(clientName = "client1", topicFilter = { "${test.dest1.name}", "${test.dest2.name}" }, qos = {
+@MqttListener(clients = "client1", topics = { "${test.dest1.name}", "${test.dest2.name}" }, qos = {
         "${test.dest1.qos}", "${test.dest2.qos}" })
 public class TestMqttListener implements MqttCallback {
 

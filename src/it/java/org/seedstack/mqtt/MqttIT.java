@@ -18,6 +18,7 @@ import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.seedstack.mqtt.fixtures.BrokerFixture;
 import org.seedstack.mqtt.fixtures.TestMqttListener;
 import org.seedstack.seed.it.AfterKernel;
 import org.seedstack.seed.it.BeforeKernel;
@@ -25,6 +26,8 @@ import org.seedstack.seed.it.SeedITRunner;
 
 import javax.inject.Named;
 import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -48,18 +51,15 @@ public class MqttIT {
     @Named("org.seedstack.mqtt.fixtures.TestMqttListener")
     MqttCallback mqttCallback;
 
-    private static Server server;
 
     @BeforeKernel
-    public static void startMqttBroker() throws Exception {
-        server = new Server();
-        final File c = new File(MqttIT.class.getResource("/configMqttServer.props").toURI());
-        server.startServer(c);
+    public static void startBroker() throws Exception {
+        BrokerFixture.startBroker();
     }
 
     @AfterKernel
-    public static void stopMqttBroker() throws Exception {
-        server.stopServer();
+    public static void stopBroker() throws Exception {
+        BrokerFixture.stopBroker();
     }
 
     @Test

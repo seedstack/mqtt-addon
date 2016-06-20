@@ -7,7 +7,7 @@
 #
 
 [org.seedstack.mqtt]
-clients = client1, client2, clientOK1
+clients = client1, client2, clientOK1, client3, client4
 client.client1.server-uri = tcp://localhost:1883
 client.client1.client-id = id1
 client.client1.mqtt-options.property.cleanSession = false
@@ -23,8 +23,30 @@ client.client1.pool.keep-alive = 60
 client.client2.server-uri = tcp://localhost:1883
 client.clientOK1.server-uri = tcp://localhost:1883
 
+client.client3.server-uri = tcp://localhost:1885
+client.client3.client-id = id3
+client.client3.mqtt-options.property.cleanSession = false
+client.client3.reconnection.interval = 5
+#client.client1.reconnection.mode = NONE
+#client.client1.pool.enabled = false
+client.client3.pool.core = 5
+client.client3.pool.max = 5
+client.client3.pool.queue = 10
+client.client3.pool.keep-alive = 60
+
+client.client4.server-uri = tcp://localhost:1886
+client.client4.client-id = id4
+client.client4.mqtt-options.property.cleanSession = false
+client.client4.reconnection.interval = 5
+#client.client1.reconnection.mode = NONE
+#client.client1.pool.enabled = false
+client.client4.pool.core = 5
+client.client4.pool.max = 5
+client.client4.pool.queue = 10
+client.client4.pool.keep-alive = 60
 []
-test.dest1.name = topic
+org.seedstack.custom.publishers.test = client3, client4
+test.dest1.name = topic, topic2, topic3
 test.dest1.qos = 1
 test.dest2.name = xxx
 test.dest2.qos = 1

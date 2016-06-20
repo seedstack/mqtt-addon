@@ -30,6 +30,6 @@ import java.lang.annotation.Target;
 @Inherited
 public @interface MqttPublishHandler {
 
-    String clientName();
+    String client();
 
 }

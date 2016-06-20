@@ -9,7 +9,7 @@ package org.seedstack.mqtt.internal.fixtures;
 
 import org.seedstack.mqtt.MqttListener;
 
-@MqttListener(clientName = "client1", topicFilter = { "t1", "t2" }, qos = "0")
+@MqttListener(clients = "client1", topics = { "t1", "t2" }, qos = "0")
 public class ListenerWithError {
 
 }
