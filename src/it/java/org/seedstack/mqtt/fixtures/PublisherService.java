@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 public class PublisherService {
 
 
-    private static final String MQTT_PLUGIN_CONFIGURATION_PREFIX = "org.seedstack.mqtt.client";
+    private static final String MQTT_PLUGIN_CONFIGURATION_PREFIX = "org.seedstack.mqtt.clients";
 
     @Inject
     private Injector injector;

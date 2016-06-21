@@ -21,6 +21,6 @@ host 0.0.0.0
 
 persistent_store target/moquette.db
 
-#false to accept only client connetions with credentials
-#true to accept client connection without credentails, validating only the one that provides
+#false to accept only clients connetions with credentials
+#true to accept clients connection without credentails, validating only the one that provides
 allow_anonymous true

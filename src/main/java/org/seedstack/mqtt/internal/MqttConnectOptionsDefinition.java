@@ -34,7 +34,7 @@ class MqttConnectOptionsDefinition {
      * {@link MqttConnectOptions}, add some properties in the configuration
      * file:
      * <ul>
-     * <li>connection-client.&lt;clients&gt;.mqttOptions.vendor.property.&lt;
+     * <li>connection-client.&lt;clientName&gt;.mqttOptions.vendor.property.&lt;
      * propertyName&gt;</li>
      * </ul>
      * propertyName could be all properties from {@link MqttConnectOptions}

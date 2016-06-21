@@ -11,6 +11,7 @@ import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.seedstack.mqtt.MqttListener;
+import org.seedstack.mqtt.MqttPublishHandler;
 import org.seedstack.mqtt.MultiListenerIT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,12 +19,12 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.Charset;
 import java.util.concurrent.CountDownLatch;
 
-@MqttListener(clients = "${" + MultiListenerIT.CUSTOM_PUBLISHER_CLIENT_LISTS_FILTER + "}", topics = "topic", qos = "1")
-public class DummyMqttListener implements MqttCallback {
+@MqttPublishHandler(clients = {"client3", "client4"})
+public class DummyMqttPublisherListener implements MqttCallback {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DummyMqttListener.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DummyMqttPublisherListener.class);
 
-    public static CountDownLatch messageReceivedCount = new CountDownLatch(2);
+    public static CountDownLatch messagePublishedCount = new CountDownLatch(2);
 
     @Override
     public void connectionLost(Throwable cause) {
@@ -31,11 +32,12 @@ public class DummyMqttListener implements MqttCallback {
 
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
-        LOGGER.info("New message received : {} {}", topic, new String(message.getPayload(), Charset.forName("UTF-8")));
-        messageReceivedCount.countDown();
+
     }
 
     @Override
     public void deliveryComplete(IMqttDeliveryToken token) {
+        LOGGER.info("message delivered to client id : {}", token.getClient().getClientId());
+        messagePublishedCount.countDown();
     }
 }

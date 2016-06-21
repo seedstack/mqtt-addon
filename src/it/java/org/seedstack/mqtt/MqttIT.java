@@ -11,7 +11,6 @@
 package org.seedstack.mqtt;
 
 import com.google.inject.Inject;
-import io.moquette.server.Server;
 import org.assertj.core.api.Assertions;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -25,15 +24,8 @@ import org.seedstack.seed.it.BeforeKernel;
 import org.seedstack.seed.it.SeedITRunner;
 
 import javax.inject.Named;
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * Test publish/subscribe for {@link MqttClient}.

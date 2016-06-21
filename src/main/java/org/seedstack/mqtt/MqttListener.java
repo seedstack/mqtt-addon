@@ -18,7 +18,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Defined a new topic listener for a client name.
+ * Defined a new topic listener for a clients name.
  * 
  * @author thierry.bouvet@mpsa.com
  *

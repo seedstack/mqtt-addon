@@ -573,6 +573,9 @@ public class MqttPluginTest {
                 configuration.subset(anyString);
                 result = configuration;
 
+                application.substituteWithConfiguration(clientName);
+                result = clientName;
+
                 configuration.getStringArray(CONNECTION_CLIENTS);
                 result = clients;
 
@@ -798,7 +801,7 @@ public class MqttPluginTest {
 
         ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
 
-        // client 1 with listener
+        // clients 1 with listener
         final MqttClientDefinition clientDefinition = new MqttClientDefinition("xx", "id");
         final MqttListenerDefinition listenerDefinition = new MqttListenerDefinition(Listener1.class,
                 Listener1.class.getCanonicalName(), new String[] { "topic" }, new int[] { 0 });
@@ -947,7 +950,7 @@ public class MqttPluginTest {
 
         ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
 
-        // client 1 with listener
+        // clients 1 with listener
         final MqttClientDefinition clientDefinition = new MqttClientDefinition("xx", "id");
         final MqttListenerDefinition listenerDefinition = new MqttListenerDefinition(Listener1.class,
                 Listener1.class.getCanonicalName(), new String[] { "topic" }, new int[] { 0 });

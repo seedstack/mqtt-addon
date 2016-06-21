@@ -12,6 +12,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.seedstack.mqtt.fixtures.BrokerFixture;
 import org.seedstack.mqtt.fixtures.DummyMqttListener;
+import org.seedstack.mqtt.fixtures.DummyMqttPublisherListener;
 import org.seedstack.mqtt.fixtures.PublisherService;
 import org.seedstack.seed.it.AfterKernel;
 import org.seedstack.seed.it.BeforeKernel;
@@ -44,6 +45,7 @@ public class MultiListenerIT {
         publisherService.publish("Hello", 1, false, "topic", CUSTOM_PUBLISHER_CLIENT_LISTS_FILTER);
         try {
             Assertions.assertThat(DummyMqttListener.messageReceivedCount.await(200, TimeUnit.MILLISECONDS)).isTrue();
+            Assertions.assertThat(DummyMqttPublisherListener.messagePublishedCount.await(200, TimeUnit.MILLISECONDS)).isTrue();
         } catch (InterruptedException e) {
             Assertions.fail(e.getMessage());
         }
