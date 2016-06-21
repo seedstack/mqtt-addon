@@ -722,6 +722,9 @@ public class MqttPluginTest {
                 configuration.getStringArray(CONNECTION_CLIENTS);
                 result = clients;
 
+                application.substituteWithConfiguration(clientName);
+                result = clientName;
+
                 configuration.getString(BROKER_URI);
                 result = "xx";
 

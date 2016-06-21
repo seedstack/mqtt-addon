@@ -26,6 +26,6 @@ import java.util.concurrent.RejectedExecutionHandler;
 @Target({ ElementType.TYPE })
 @Inherited
 public @interface MqttRejectHandler {
-    String clientName();
+    String[] clients();
 
 }

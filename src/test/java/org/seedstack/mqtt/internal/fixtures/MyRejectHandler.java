@@ -18,7 +18,7 @@ import org.seedstack.mqtt.MqttRejectedExecutionHandler;
  * @author thierry.bouvet@mpsa.com
  *
  */
-@MqttRejectHandler(clientName = "clientOK1")
+@MqttRejectHandler(clients = "clientOK1")
 public class MyRejectHandler implements MqttRejectedExecutionHandler {
 
     @Override

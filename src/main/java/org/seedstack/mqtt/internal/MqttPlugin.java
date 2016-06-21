@@ -97,15 +97,23 @@ public class MqttPlugin extends AbstractPlugin {
             Class<? extends MqttRejectedExecutionHandler> rejectClass = (Class<? extends MqttRejectedExecutionHandler>) candidate;
             String rejectName = rejectClass.getCanonicalName();
             MqttRejectHandler annotation = rejectClass.getAnnotation(MqttRejectHandler.class);
-            if (!mqttClientDefinitions.containsKey(annotation.clientName())) {
-                throw SeedException.createNew(MqttErrorCodes.MQTT_REJECT_HANDLER_CLIENT_NOT_FOUND)
-                        .put("client", annotation.clientName()).put("rejectName", rejectName);
-            }
-            LOGGER.debug("New MqttRejectHandler callback found: [{}] for client [{}] ",
-                    new Object[]{rejectName, annotation.clientName()});
+            String[] clients = resolveSubstitutes(annotation.clients());
+            if (clients != null && clients.length > 0) {
+                for (String client : clients) {
+                    if (!mqttClientDefinitions.containsKey(client)) {
+                        throw SeedException.createNew(MqttErrorCodes.MQTT_REJECT_HANDLER_CLIENT_NOT_FOUND)
+                                .put("client", client).put("rejectName", rejectName);
+                    }
+                    LOGGER.debug("New MqttRejectHandler callback found: [{}] for client [{}] ",
+                            new Object[]{rejectName, client});
 
-            mqttClientDefinitions.get(annotation.clientName()).getPoolDefinition().setRejectHandler(rejectClass,
-                    rejectName);
+                    mqttClientDefinitions.get(client).getPoolDefinition().setRejectHandler(rejectClass,
+                            rejectName);
+                }
+            } else {
+                throw SeedException.createNew(MqttErrorCodes.MQTT_REJECT_HANDLER_CLIENT_NOT_FOUND)
+                        .put("client", String.valueOf(annotation.clients())).put("publisherName", rejectName);
+            }
         }
     }
 
