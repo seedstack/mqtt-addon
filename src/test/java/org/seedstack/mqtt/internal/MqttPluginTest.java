@@ -225,6 +225,9 @@ public class MqttPluginTest {
                 application.getConfiguration();
                 result = configuration;
 
+                application.substituteWithConfiguration(anyString);
+                result = null;
+
                 configuration.subset(anyString);
                 result = configuration;
 
@@ -431,6 +434,7 @@ public class MqttPluginTest {
      */
     @Test(expected = SeedException.class)
     public void testInitWithListenerMisconfigured(@Mocked final Configuration configuration) {
+        final String clientName = "client1";
         final String[] clients = { "clientOK1" };
         final Collection<Class<?>> classes = new ArrayList<Class<?>>();
         classes.add(ListenerWithError.class);
@@ -439,6 +443,9 @@ public class MqttPluginTest {
             {
                 application.getConfiguration();
                 result = configuration;
+
+                application.substituteWithConfiguration(clientName);
+                result = clientName;
 
                 configuration.subset(anyString);
                 result = configuration;
@@ -475,6 +482,9 @@ public class MqttPluginTest {
             {
                 application.getConfiguration();
                 result = configuration;
+
+                application.substituteWithConfiguration(clientName);
+                result = clientName;
 
                 configuration.subset(anyString);
                 result = configuration;
@@ -562,6 +572,9 @@ public class MqttPluginTest {
 
                 configuration.subset(anyString);
                 result = configuration;
+
+                application.substituteWithConfiguration(clientName);
+                result = clientName;
 
                 configuration.getStringArray(CONNECTION_CLIENTS);
                 result = clients;
@@ -709,6 +722,9 @@ public class MqttPluginTest {
                 configuration.getStringArray(CONNECTION_CLIENTS);
                 result = clients;
 
+                application.substituteWithConfiguration(clientName);
+                result = clientName;
+
                 configuration.getString(BROKER_URI);
                 result = "xx";
 
@@ -782,13 +798,13 @@ public class MqttPluginTest {
         MqttPlugin plugin = new MqttPlugin();
 
         ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
-        final String client1 = "clientName";
+        final String client1 = "clients";
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
 
         ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
 
-        // client 1 with listener
+        // clients 1 with listener
         final MqttClientDefinition clientDefinition = new MqttClientDefinition("xx", "id");
         final MqttListenerDefinition listenerDefinition = new MqttListenerDefinition(Listener1.class,
                 Listener1.class.getCanonicalName(), new String[] { "topic" }, new int[] { 0 });
@@ -824,7 +840,7 @@ public class MqttPluginTest {
         MqttPlugin plugin = new MqttPlugin();
 
         ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
-        final String client1 = "clientName";
+        final String client1 = "clients";
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
 
@@ -861,7 +877,7 @@ public class MqttPluginTest {
         MqttPlugin plugin = new MqttPlugin();
 
         ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
-        final String client1 = "clientName";
+        final String client1 = "clients";
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
 
@@ -896,7 +912,7 @@ public class MqttPluginTest {
         MqttPlugin plugin = new MqttPlugin();
 
         ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
-        final String client1 = "clientName";
+        final String client1 = "clients";
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
 
@@ -931,13 +947,13 @@ public class MqttPluginTest {
         MqttPlugin plugin = new MqttPlugin();
 
         ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
-        final String client1 = "clientName";
+        final String client1 = "clients";
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
 
         ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
 
-        // client 1 with listener
+        // clients 1 with listener
         final MqttClientDefinition clientDefinition = new MqttClientDefinition("xx", "id");
         final MqttListenerDefinition listenerDefinition = new MqttListenerDefinition(Listener1.class,
                 Listener1.class.getCanonicalName(), new String[] { "topic" }, new int[] { 0 });

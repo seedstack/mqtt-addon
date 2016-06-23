@@ -13,13 +13,13 @@
 # 
 ##############################################
 
-port 1883
+port 1886
 
-websocket_port 8080
+websocket_port 8082
 
 host 0.0.0.0
 
-persistent_store target/moquette.db
+persistent_store target/moquette3.db
 
 #false to accept only clients connetions with credentials
 #true to accept clients connection without credentails, validating only the one that provides

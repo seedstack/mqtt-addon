@@ -18,7 +18,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Defined a new topic listener for a client name.
+ * Defined a new topic listener for a clients name.
  * 
  * @author thierry.bouvet@mpsa.com
  *
@@ -29,9 +29,9 @@ import java.lang.annotation.Target;
 @Inherited
 public @interface MqttListener {
 
-    String clientName();
+    String[] clients();
 
-    String[] topicFilter();
+    String[] topics();
 
     String[] qos();
 

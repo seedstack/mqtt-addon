@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
  * @author thierry.bouvet@mpsa.com
  *
  */
-@MqttPublishHandler(clientName = "clientOK1")
+@MqttPublishHandler(clients = "clientOK1")
 public class PublishHandler implements MqttCallback {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PublishHandler.class);

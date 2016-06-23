@@ -6,30 +6,25 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 /**
- * 
+ *
  */
 package org.seedstack.mqtt;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
- * Defined a new publish handler for a client name. This handler is called when
+ * Defined a new publish handler for a clients name. This handler is called when
  * a MqttCallback action arrived.
- * 
+ *
  * @author thierry.bouvet@mpsa.com
  *
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.TYPE })
+@Target({ElementType.TYPE})
 @Inherited
 public @interface MqttPublishHandler {
 
-    String clientName();
+    String[] clients();
 
 }

@@ -6,21 +6,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 /**
- * 
+ *
  */
 package org.seedstack.mqtt.internal;
 
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.google.common.collect.Lists;
+import io.nuun.kernel.api.plugin.InitState;
+import io.nuun.kernel.api.plugin.context.Context;
+import io.nuun.kernel.api.plugin.context.InitContext;
+import io.nuun.kernel.api.plugin.request.ClasspathScanRequest;
+import io.nuun.kernel.core.AbstractPlugin;
 import org.apache.commons.configuration.Configuration;
-import org.eclipse.paho.client.mqttv3.IMqttClient;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttSecurityException;
+import org.eclipse.paho.client.mqttv3.*;
 import org.kametic.specifications.Specification;
 import org.seedstack.mqtt.MqttListener;
 import org.seedstack.mqtt.MqttPublishHandler;
@@ -32,20 +29,15 @@ import org.seedstack.seed.core.internal.application.ApplicationPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
-
-import io.nuun.kernel.api.plugin.InitState;
-import io.nuun.kernel.api.plugin.context.Context;
-import io.nuun.kernel.api.plugin.context.InitContext;
-import io.nuun.kernel.api.plugin.request.ClasspathScanRequest;
-import io.nuun.kernel.core.AbstractPlugin;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This plugin provides MQTT support through a plain configuration. It uses Paho
  * library.
- * 
- * @author thierry.bouvet@mpsa.com
  *
+ * @author thierry.bouvet@mpsa.com
  */
 public class MqttPlugin extends AbstractPlugin {
 
@@ -74,8 +66,9 @@ public class MqttPlugin extends AbstractPlugin {
 
     private Application application;
     private Configuration mqttConfiguration;
-    private ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();;
-    private ConcurrentHashMap<String, IMqttClient> mqttClients = new ConcurrentHashMap<String, IMqttClient>();;
+    private ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
+    private ConcurrentHashMap<String, IMqttClient> mqttClients = new ConcurrentHashMap<String, IMqttClient>();
+
 
     @Override
     public String name() {
@@ -104,15 +97,23 @@ public class MqttPlugin extends AbstractPlugin {
             Class<? extends MqttRejectedExecutionHandler> rejectClass = (Class<? extends MqttRejectedExecutionHandler>) candidate;
             String rejectName = rejectClass.getCanonicalName();
             MqttRejectHandler annotation = rejectClass.getAnnotation(MqttRejectHandler.class);
-            if (!mqttClientDefinitions.containsKey(annotation.clientName())) {
-                throw SeedException.createNew(MqttErrorCodes.MQTT_REJECT_HANDLER_CLIENT_NOT_FOUND)
-                        .put("clientName", annotation.clientName()).put("rejectName", rejectName);
-            }
-            LOGGER.debug("New MqttRejectHandler callback found: [{}] for client [{}] ",
-                    new Object[] { rejectName, annotation.clientName() });
+            String[] clients = resolveSubstitutes(annotation.clients());
+            if (clients != null && clients.length > 0) {
+                for (String client : clients) {
+                    if (!mqttClientDefinitions.containsKey(client)) {
+                        throw SeedException.createNew(MqttErrorCodes.MQTT_REJECT_HANDLER_CLIENT_NOT_FOUND)
+                                .put("client", client).put("rejectName", rejectName);
+                    }
+                    LOGGER.debug("New MqttRejectHandler callback found: [{}] for client [{}] ",
+                            new Object[]{rejectName, client});
 
-            mqttClientDefinitions.get(annotation.clientName()).getPoolDefinition().setRejectHandler(rejectClass,
-                    rejectName);
+                    mqttClientDefinitions.get(client).getPoolDefinition().setRejectHandler(rejectClass,
+                            rejectName);
+                }
+            } else {
+                throw SeedException.createNew(MqttErrorCodes.MQTT_REJECT_HANDLER_CLIENT_NOT_FOUND)
+                        .put("client", String.valueOf(annotation.clients())).put("publisherName", rejectName);
+            }
         }
     }
 
@@ -122,15 +123,24 @@ public class MqttPlugin extends AbstractPlugin {
             Class<? extends MqttCallback> mqttPublisherClass = (Class<? extends MqttCallback>) candidate;
             String mqttPublisherName = mqttPublisherClass.getCanonicalName();
             MqttPublishHandler annotation = mqttPublisherClass.getAnnotation(MqttPublishHandler.class);
-            if (!mqttClientDefinitions.containsKey(annotation.clientName())) {
-                throw SeedException.createNew(MqttErrorCodes.MQTT_LISTENER_CLIENT_NOT_FOUND)
-                        .put("clientName", annotation.clientName()).put("publisherName", mqttPublisherName);
-            }
-            LOGGER.debug("New MqttPublisher callback found: [{}] for client [{}] ",
-                    new Object[] { mqttPublisherName, annotation.clientName() });
+            String[] clients = resolveSubstitutes(annotation.clients());
+            if (clients != null && clients.length > 0) {
 
-            mqttClientDefinitions.get(annotation.clientName())
-                    .setPublisherDefinition(new MqttPublisherDefinition(mqttPublisherClass, mqttPublisherName));
+                for (String client : clients) {
+                    if (!mqttClientDefinitions.containsKey(client)) {
+                        throw SeedException.createNew(MqttErrorCodes.MQTT_LISTENER_CLIENT_NOT_FOUND)
+                                .put("client", client).put("publisherName", mqttPublisherName);
+                    }
+                    LOGGER.debug("New MqttPublisher callback found: [{}] for client [{}] ",
+                            new Object[]{mqttPublisherName, client});
+
+                    mqttClientDefinitions.get(client)
+                            .setPublisherDefinition(new MqttPublisherDefinition(mqttPublisherClass, mqttPublisherName));
+                }
+            } else {
+                throw SeedException.createNew(MqttErrorCodes.MQTT_LISTENER_CLIENT_NOT_FOUND)
+                        .put("client", String.valueOf(annotation.clients())).put("publisherName", mqttPublisherName);
+            }
         }
 
     }
@@ -155,29 +165,52 @@ public class MqttPlugin extends AbstractPlugin {
             Class<? extends MqttCallback> mqttListenerClass = (Class<? extends MqttCallback>) candidate;
             String mqttListenerName = mqttListenerClass.getCanonicalName();
             MqttListener annotation = mqttListenerClass.getAnnotation(MqttListener.class);
-            if (!mqttClientDefinitions.containsKey(annotation.clientName())) {
+            String[] clients = resolveSubstitutes(annotation.clients());
+            if (clients != null && clients.length > 0) {
+
+                for (String client : clients) {
+                    if (!mqttClientDefinitions.containsKey(client)) {
+                        throw SeedException.createNew(MqttErrorCodes.MQTT_LISTENER_CLIENT_NOT_FOUND)
+                                .put("clients", client).put("listenerName", mqttListenerName);
+                    }
+                    String[] qosList = resolveSubstitutes(annotation.qos());
+                    String[] topics = resolveSubstitutes(annotation.topics());
+                    if (qosList.length != topics.length) {
+                        throw SeedException.createNew(MqttErrorCodes.TOPICS_QOS_NOT_EQUAL).put("listenerName",
+                                mqttListenerName);
+                    }
+                    int[] qosListSubstitute = new int[qosList.length];
+
+                    for (int i = 0; i < qosList.length; i++) {
+                        qosListSubstitute[i] = Integer.parseInt(qosList[i]);
+                    }
+                    LOGGER.debug("New MqttListener found: [{}] for client [{}] and topicFiler {}",
+                            new Object[]{mqttListenerName, client, topics});
+
+                    mqttClientDefinitions.get(client).setListenerDefinition(new MqttListenerDefinition(
+                            mqttListenerClass, mqttListenerName, topics, qosListSubstitute));
+                }
+            } else {
                 throw SeedException.createNew(MqttErrorCodes.MQTT_LISTENER_CLIENT_NOT_FOUND)
-                        .put("clientName", annotation.clientName()).put("listenerName", mqttListenerName);
+                        .put("clients", annotation.clients().toString()).put("listenerName", mqttListenerName);
             }
-            String[] qosList = annotation.qos();
-            String[] topics = annotation.topicFilter();
-            if (qosList.length != topics.length) {
-                throw SeedException.createNew(MqttErrorCodes.TOPICS_QOS_NOT_EQUAL).put("listenerName",
-                        mqttListenerName);
-            }
-            int[] qosListSubstitute = new int[qosList.length];
-            String[] topicsSubstitute = new String[topics.length];
-
-            for (int i = 0; i < topics.length; i++) {
-                qosListSubstitute[i] = Integer.parseInt(application.substituteWithConfiguration(qosList[i]));
-                topicsSubstitute[i] = application.substituteWithConfiguration(topics[i]);
-            }
-            LOGGER.debug("New MqttListener found: [{}] for client [{}] and topicFiler {}",
-                    new Object[] { mqttListenerName, annotation.clientName(), topicsSubstitute });
-
-            mqttClientDefinitions.get(annotation.clientName()).setListenerDefinition(new MqttListenerDefinition(
-                    mqttListenerClass, mqttListenerName, topicsSubstitute, qosListSubstitute));
         }
+    }
+
+    private String[] resolveSubstitutes(String[] filters) {
+        List<String> filteredValues = new ArrayList<String>();
+        if (filters != null) {
+            for (String filter : filters) {
+                String value = application.substituteWithConfiguration(filter);
+                if (value != null) {
+                    filteredValues.addAll(Arrays.asList(value.split(",")));
+                }
+            }
+            if (!filteredValues.isEmpty()) {
+                return filteredValues.toArray(new String[filteredValues.size()]);
+            }
+        }
+        return null;
     }
 
     @Override
@@ -205,7 +238,7 @@ public class MqttPlugin extends AbstractPlugin {
 
     @Override
     public Collection<Class<?>> requiredPlugins() {
-        return Lists.<Class<?>> newArrayList(ApplicationPlugin.class);
+        return Lists.<Class<?>>newArrayList(ApplicationPlugin.class);
     }
 
     @Override
@@ -228,11 +261,11 @@ public class MqttPlugin extends AbstractPlugin {
             String uri = clientConfiguration.getString(BROKER_URI);
             String clientId = clientConfiguration.getString(MQTTCLIENT_ID);
             if (uri == null) {
-                throw SeedException.createNew(MqttErrorCodes.MISCONFIGURED_MQTT_CLIENT).put("clientName", clientName);
+                throw SeedException.createNew(MqttErrorCodes.MISCONFIGURED_MQTT_CLIENT).put("clients", clientName);
             }
             if (clientId == null) {
                 clientId = MqttClient.generateClientId();
-                LOGGER.debug("Generate new client id [{}] for client [{}]", clientId, clientName);
+                LOGGER.debug("Generate new client id [{}] for client name [{}]", clientId, clientName);
             }
 
             MqttClientDefinition def = new MqttClientDefinition(uri, clientId);
@@ -275,9 +308,9 @@ public class MqttPlugin extends AbstractPlugin {
                 MqttClientUtils.connect(mqttClient, clientDefinition);
                 LOGGER.debug("Connect new MqttClient [{}] ", clientName);
             } catch (MqttSecurityException e) {
-                throw SeedException.wrap(e, MqttErrorCodes.CAN_NOT_CONNECT_MQTT_CLIENT).put("clientName", clientName);
+                throw SeedException.wrap(e, MqttErrorCodes.CAN_NOT_CONNECT_MQTT_CLIENT).put("client", clientName);
             } catch (MqttException e) {
-                throw SeedException.wrap(e, MqttErrorCodes.CAN_NOT_CONNECT_MQTT_CLIENT).put("clientName", clientName);
+                throw SeedException.wrap(e, MqttErrorCodes.CAN_NOT_CONNECT_MQTT_CLIENT).put("client", clientName);
             }
             MqttListenerDefinition listenerDefinition = clientDefinition.getListenerDefinition();
             if (listenerDefinition != null) {
@@ -286,7 +319,7 @@ public class MqttPlugin extends AbstractPlugin {
                     LOGGER.debug("Subscribe MqttClient [{}] to topicFiler {}", clientName, topicFiler);
                     MqttClientUtils.subscribe(mqttClient, listenerDefinition);
                 } catch (MqttException e) {
-                    throw SeedException.wrap(e, MqttErrorCodes.CAN_NOT_CONNECT_SUBSCRIBE).put("clientName", clientName)
+                    throw SeedException.wrap(e, MqttErrorCodes.CAN_NOT_CONNECT_SUBSCRIBE).put("client", clientName)
                             .put("topic", topicFiler);
                 }
             }

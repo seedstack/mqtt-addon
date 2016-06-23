@@ -56,7 +56,7 @@ class MqttModule extends AbstractModule {
             }
             MqttListenerDefinition listenerDefinition = clientDefinition.getListenerDefinition();
             if (listenerDefinition != null) {
-                registerListener(clientName, mqttClient, callbackAdapter, clientDefinition);
+                registerListener(callbackAdapter, clientDefinition);
             }
         }
 
@@ -70,7 +70,7 @@ class MqttModule extends AbstractModule {
         callbackAdapter.setPublisherKey(Key.get(MqttCallback.class, Names.named(className)));
     }
 
-    private void registerListener(String clientName, IMqttClient mqttClient, MqttCallbackAdapter callbackAdapter,
+    private void registerListener(MqttCallbackAdapter callbackAdapter,
             MqttClientDefinition clientDefinition) {
         MqttListenerDefinition listenerDefinition = clientDefinition.getListenerDefinition();
         String className = listenerDefinition.getClassName();
