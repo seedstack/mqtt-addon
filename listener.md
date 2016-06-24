@@ -11,13 +11,13 @@ zones:
     - Addons
 menu:
     AddonMQTT:
-        weight: 40
+        weight: 30
 ---
 
 To receive MQTT messages, create a listener class which implements the `org.eclipse.paho.client.mqttv3.MqttCallback` interface and is 
 annotated with `@MqttListener`. This annotation takes the following parameters:
 
-* The `cliens` parameter specifying the client that will be used to receive the messages.
+* The `clients` parameter specifying the client that will be used to receive the messages.
 * The `topics` parameter specifying which topic it will listen to.
 * The `qos` parameter specifying which topic it will listen to (for the topicFilter defined).
 

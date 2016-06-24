@@ -1,5 +1,5 @@
 ---
-title: "Publish Handler"
+title: "Publish handler"
 name: "MQTT"
 repo: "https://github.com/seedstack/mqtt-addon"
 tags:
@@ -11,7 +11,7 @@ zones:
     - Addons
 menu:
     AddonMQTT:
-        weight: 40
+        weight: 50
 ---
 
 To handle a MQTT publisher, create a handler class which implements the `org.eclipse.paho.client.mqttv3.MqttCallback` interface and is 
@@ -22,5 +22,3 @@ annotated with `@MqttPublishHandler`. This annotation takes the following parame
 With this class, the default reconnection behavior can be overridden.
  
 
- 
- 
