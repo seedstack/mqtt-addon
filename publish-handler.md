@@ -1,33 +1,26 @@
 ---
-title: "Publishing messages"
+title: "Publish Handler"
 name: "MQTT"
 repo: "https://github.com/seedstack/mqtt-addon"
 tags:
     - "message"
     - "mqtt"
     - "publish"
+    - "handler"
 zones:
     - Addons
 menu:
     AddonMQTT:
-        weight: 30
+        weight: 40
 ---
 
 To handle a MQTT publisher, create a handler class which implements the `org.eclipse.paho.client.mqttv3.MqttCallback` interface and is 
 annotated with `@MqttPublishHandler`. This annotation takes the following parameter:
 
-* The `clientName` parameter specifying the client that will publish the messages.
+* The `clients` parameter specifying the client that will publish the messages.
 
 With this class, the default reconnection behavior can be overridden.
  
-In a Java class, just inject your own client:
 
-    @Inject
-    @Named("client-1")
-    IMqttClient mqttClient;
- 
- And then in a method, just do:
-
-	mqttClient.publish("topicName","message".getBytes(Charset.forName("UTF-8")), 1, false);
  
  
