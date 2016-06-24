@@ -13,10 +13,10 @@ package org.seedstack.mqtt.internal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import mockit.integration.junit4.JMockit;
 import org.apache.commons.configuration.Configuration;
 import org.assertj.core.api.Assertions;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
@@ -45,6 +45,7 @@ import mockit.MockUp;
 import mockit.Mocked;
 import mockit.NonStrictExpectations;
 import mockit.Verifications;
+import mockit.integration.junit4.JMockit;
 
 /**
  * @author thierry.bouvet@mpsa.com
@@ -58,6 +59,7 @@ public class MqttPluginTest {
     private static final String BROKER_URI = "server-uri";
     private static final String RECONNECTION_INTERVAL = "interval";
     private static final String RECONNECTION_MODE = "mode";
+    private static final String POOL_ENABLED = "enabled";
     @Mocked
     InitContext initContext;
     @Mocked
@@ -612,6 +614,64 @@ public class MqttPluginTest {
      * Test method for
      * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
      * .
+     */
+    @Test(expected=SeedException.class)
+    public void testInitWithPublisherAndNoClient(@Mocked final Configuration configuration) {
+        final String clientName = "clientOK1";
+        final String clientName2 = "clientNOK";
+        final String[] clients = { clientName };
+        final Collection<Class<?>> listenerClasses = new ArrayList<Class<?>>();
+        final Collection<Class<?>> rejectedHandlers = new ArrayList<Class<?>>();
+        final Collection<Class<?>> classes = new ArrayList<Class<?>>();
+        classes.add(PublishHandler.class);
+        MqttPlugin plugin = new MqttPlugin();
+        new Expectations() {
+            {
+                application.getConfiguration();
+                result = configuration;
+
+                configuration.subset(anyString);
+                result = configuration;
+
+                application.substituteWithConfiguration(clientName);
+                result = clientName2;
+
+                configuration.getStringArray(CONNECTION_CLIENTS);
+                result = clients;
+
+                configuration.getString(BROKER_URI);
+                result = "xx";
+
+                specs.get(any);
+                result = listenerClasses;
+                result = classes;
+                result = rejectedHandlers;
+
+            }
+        };
+
+        new MockUp<MqttClient>() {
+            @Mock
+            public void $init(String serverURI, String clientId) throws MqttException {
+            }
+
+        };
+
+        plugin.init(initContext);
+
+        ConcurrentHashMap<String, MqttClientDefinition> defs = Deencapsulation.getField(plugin,
+                "mqttClientDefinitions");
+        Assertions.assertThat(defs).isNotEmpty();
+        MqttClientDefinition clientDef = defs.get("clientOK1");
+        Assertions.assertThat(clientDef.getPublisherDefinition()).isNotNull();
+        Assertions.assertThat(clientDef.getPublisherDefinition().getPublisherClass()).isEqualTo(PublishHandler.class);
+
+    }
+
+    /**
+     * Test method for
+     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
+     * .
      * 
      * @throws Exception
      *             if an error occurred
@@ -751,6 +811,114 @@ public class MqttPluginTest {
         MqttClientDefinition clientDef = defs.get(clientName);
         Assertions.assertThat(clientDef.getPoolDefinition()).isNotNull();
         Assertions.assertThat(clientDef.getPoolDefinition().getRejectHandlerClass()).isEqualTo(MyRejectHandler.class);
+    }
+
+    /**
+     * Test method for
+     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
+     * .
+     */
+    @Test(expected=SeedException.class)
+    public void testInitWithRejectHandlerAndNoClient(@Mocked final Configuration configuration) {
+        final String clientName = "clientOK1";
+        final String clientName2 = "clientNOK";
+        final String[] clients = { clientName };
+        final Collection<Class<?>> classes = new ArrayList<Class<?>>();
+        classes.add(MyRejectHandler.class);
+        final Collection<Class<?>> listenerClasses = new ArrayList<Class<?>>();
+        final Collection<Class<?>> publisherClasses = new ArrayList<Class<?>>();
+        MqttPlugin plugin = new MqttPlugin();
+        new Expectations() {
+            {
+                application.getConfiguration();
+                result = configuration;
+
+                configuration.subset(anyString);
+                result = configuration;
+
+                configuration.getStringArray(CONNECTION_CLIENTS);
+                result = clients;
+
+                application.substituteWithConfiguration(clientName);
+                result = clientName2;
+
+                configuration.getString(BROKER_URI);
+                result = "xx";
+
+                specs.get(any);
+                result = listenerClasses;
+                result = publisherClasses;
+                result = classes;
+
+            }
+        };
+
+        new MockUp<MqttClient>() {
+            @Mock
+            public void $init(String serverURI, String clientId) throws MqttException {
+            }
+
+        };
+
+        plugin.init(initContext);
+
+        ConcurrentHashMap<String, MqttClientDefinition> defs = Deencapsulation.getField(plugin,
+                "mqttClientDefinitions");
+        Assertions.assertThat(defs).isNotEmpty();
+        MqttClientDefinition clientDef = defs.get(clientName);
+        Assertions.assertThat(clientDef.getPoolDefinition()).isNotNull();
+        Assertions.assertThat(clientDef.getPoolDefinition().getRejectHandlerClass()).isEqualTo(MyRejectHandler.class);
+    }
+
+    /**
+     * Test method for
+     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
+     * .
+     */
+    @Test
+    public void testInitWithPoolConfiguration(@Mocked final Configuration configuration, @SuppressWarnings("rawtypes") @Mocked final ArrayBlockingQueue queue, @Mocked final ThreadPoolExecutor threadPoolExecutor) {
+        final String clientName = "clientOK1";
+        final String[] clients = { clientName };
+        final Collection<Class<?>> classes = new ArrayList<Class<?>>();
+        MqttPlugin plugin = new MqttPlugin();
+        new Expectations() {
+            {
+                application.getConfiguration();
+                result = configuration;
+
+                configuration.subset(anyString);
+                result = configuration;
+
+                configuration.getStringArray(CONNECTION_CLIENTS);
+                result = clients;
+
+                configuration.getString(BROKER_URI);
+                result = "xx";
+
+                configuration.getBoolean(POOL_ENABLED, Boolean.TRUE);
+                result = Boolean.TRUE;
+                
+                specs.get(any);
+                result = classes;
+
+            }
+        };
+
+        new MockUp<MqttClient>() {
+            @Mock
+            public void $init(String serverURI, String clientId) throws MqttException {
+            }
+
+        };
+
+        plugin.init(initContext);
+
+        ConcurrentHashMap<String, MqttClientDefinition> defs = Deencapsulation.getField(plugin,
+                "mqttClientDefinitions");
+        Assertions.assertThat(defs).isNotEmpty();
+        MqttClientDefinition clientDef = defs.get(clientName);
+        Assertions.assertThat(clientDef.getPoolDefinition()).isNotNull();
+        Assertions.assertThat(clientDef.getPoolDefinition().getThreadPoolExecutor()).isNotNull();
     }
 
     /**

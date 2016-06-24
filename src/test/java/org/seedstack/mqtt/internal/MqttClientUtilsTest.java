@@ -10,16 +10,17 @@
  */
 package org.seedstack.mqtt.internal;
 
-import mockit.integration.junit4.JMockit;
 import org.apache.commons.configuration.Configuration;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.seedstack.seed.SeedException;
 
 import mockit.Expectations;
 import mockit.Mocked;
 import mockit.Verifications;
-import org.junit.runner.RunWith;
+import mockit.integration.junit4.JMockit;
 
 /**
  * @author thierry.bouvet@mpsa.com
@@ -116,6 +117,35 @@ public class MqttClientUtilsTest {
                 mqttClient.subscribe(topics, qos);
             }
         };
+
+    }
+    
+    /**
+     * Test method for
+     * {@link org.seedstack.mqtt.internal.MqttClientUtils#subscribe(org.eclipse.paho.client.mqttv3.IMqttClient, org.seedstack.mqtt.internal.MqttListenerDefinition)}
+     * .
+     * 
+     * @throws Exception
+     *             if an error occured
+     */
+    @Test(expected=SeedException.class)
+    public void testSubscribeWithError(@Mocked final MqttListenerDefinition listenerDefinition) throws Exception {
+        final String uri = "uri";
+        final String clientId = "id";
+        final String[] topics = new String[] { "topic", "topic2" };
+        final int[] qos = new int[] { 0, 0x80 };
+        MqttClientDefinition clientDefinition = new MqttClientDefinition(uri, clientId);
+        new Expectations() {
+            {
+                listenerDefinition.getTopicFilter();
+                result = topics;
+
+                listenerDefinition.getQos();
+                result = qos;
+            }
+        };
+        clientDefinition.setListenerDefinition(listenerDefinition);
+        MqttClientUtils.subscribe(mqttClient, listenerDefinition);
 
     }
 

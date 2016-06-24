@@ -7,10 +7,11 @@
  */
 package org.seedstack.mqtt.fixtures;
 
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.name.Names;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -20,16 +21,14 @@ import org.seedstack.seed.Logging;
 import org.seedstack.seed.it.ITBind;
 import org.slf4j.Logger;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.name.Names;
 
 @ITBind
 public class PublisherService {
 
-
-    private static final String MQTT_PLUGIN_CONFIGURATION_PREFIX = "org.seedstack.mqtt.clients";
 
     @Inject
     private Injector injector;

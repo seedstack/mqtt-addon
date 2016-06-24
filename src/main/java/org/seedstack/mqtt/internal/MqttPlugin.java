@@ -10,14 +10,20 @@
  */
 package org.seedstack.mqtt.internal;
 
-import com.google.common.collect.Lists;
-import io.nuun.kernel.api.plugin.InitState;
-import io.nuun.kernel.api.plugin.context.Context;
-import io.nuun.kernel.api.plugin.context.InitContext;
-import io.nuun.kernel.api.plugin.request.ClasspathScanRequest;
-import io.nuun.kernel.core.AbstractPlugin;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.commons.configuration.Configuration;
-import org.eclipse.paho.client.mqttv3.*;
+import org.eclipse.paho.client.mqttv3.IMqttClient;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttSecurityException;
 import org.kametic.specifications.Specification;
 import org.seedstack.mqtt.MqttListener;
 import org.seedstack.mqtt.MqttPublishHandler;
@@ -29,9 +35,13 @@ import org.seedstack.seed.core.internal.application.ApplicationPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
+import com.google.common.collect.Lists;
+
+import io.nuun.kernel.api.plugin.InitState;
+import io.nuun.kernel.api.plugin.context.Context;
+import io.nuun.kernel.api.plugin.context.InitContext;
+import io.nuun.kernel.api.plugin.request.ClasspathScanRequest;
+import io.nuun.kernel.core.AbstractPlugin;
 
 /**
  * This plugin provides MQTT support through a plain configuration. It uses Paho
@@ -112,7 +122,7 @@ public class MqttPlugin extends AbstractPlugin {
                 }
             } else {
                 throw SeedException.createNew(MqttErrorCodes.MQTT_REJECT_HANDLER_CLIENT_NOT_FOUND)
-                        .put("client", String.valueOf(annotation.clients())).put("publisherName", rejectName);
+                        .put("client", String.valueOf(annotation.clients())).put("rejectName", rejectName);
             }
         }
     }
