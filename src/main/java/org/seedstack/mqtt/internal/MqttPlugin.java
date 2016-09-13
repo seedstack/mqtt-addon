@@ -181,7 +181,7 @@ public class MqttPlugin extends AbstractPlugin {
                 for (String client : clients) {
                     if (!mqttClientDefinitions.containsKey(client)) {
                         throw SeedException.createNew(MqttErrorCodes.MQTT_LISTENER_CLIENT_NOT_FOUND)
-                                .put("clients", client).put("listenerName", mqttListenerName);
+                                .put("client", client).put("listenerName", mqttListenerName);
                     }
                     String[] qosList = resolveSubstitutes(annotation.qos());
                     String[] topics = resolveSubstitutes(annotation.topics());
@@ -202,7 +202,7 @@ public class MqttPlugin extends AbstractPlugin {
                 }
             } else {
                 throw SeedException.createNew(MqttErrorCodes.MQTT_LISTENER_CLIENT_NOT_FOUND)
-                        .put("clients", annotation.clients().toString()).put("listenerName", mqttListenerName);
+                        .put("client", Arrays.toString(annotation.clients())).put("listenerName", mqttListenerName);
             }
         }
     }
@@ -271,7 +271,7 @@ public class MqttPlugin extends AbstractPlugin {
             String uri = clientConfiguration.getString(BROKER_URI);
             String clientId = clientConfiguration.getString(MQTTCLIENT_ID);
             if (uri == null) {
-                throw SeedException.createNew(MqttErrorCodes.MISCONFIGURED_MQTT_CLIENT).put("clients", clientName);
+                throw SeedException.createNew(MqttErrorCodes.MISCONFIGURED_MQTT_CLIENT).put("client", clientName);
             }
             if (clientId == null) {
                 clientId = MqttClient.generateClientId();

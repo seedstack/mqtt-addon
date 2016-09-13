@@ -6,17 +6,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 /**
- * 
+ *
  */
 package org.seedstack.mqtt.internal;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadPoolExecutor;
-
+import io.nuun.kernel.api.plugin.context.Context;
+import io.nuun.kernel.api.plugin.context.InitContext;
+import io.nuun.kernel.api.plugin.request.ClasspathScanRequest;
+import mockit.*;
+import mockit.integration.junit4.JMockit;
 import org.apache.commons.configuration.Configuration;
 import org.assertj.core.api.Assertions;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
@@ -35,21 +33,17 @@ import org.seedstack.seed.Application;
 import org.seedstack.seed.SeedException;
 import org.seedstack.seed.core.internal.application.ApplicationPlugin;
 
-import io.nuun.kernel.api.plugin.context.Context;
-import io.nuun.kernel.api.plugin.context.InitContext;
-import io.nuun.kernel.api.plugin.request.ClasspathScanRequest;
-import mockit.Deencapsulation;
-import mockit.Expectations;
-import mockit.Mock;
-import mockit.MockUp;
-import mockit.Mocked;
-import mockit.NonStrictExpectations;
-import mockit.Verifications;
-import mockit.integration.junit4.JMockit;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadPoolExecutor;
+
+import static org.seedstack.mqtt.internal.RejectedExecutionPolicy.CALLER_RUNS;
 
 /**
  * @author thierry.bouvet@mpsa.com
- *
  */
 @RunWith(JMockit.class)
 public class MqttPluginTest {
@@ -60,6 +54,9 @@ public class MqttPluginTest {
     private static final String RECONNECTION_INTERVAL = "interval";
     private static final String RECONNECTION_MODE = "mode";
     private static final String POOL_ENABLED = "enabled";
+    private static final String REJECTED_POLICY = "rejected-policy";
+
+
     @Mocked
     InitContext initContext;
     @Mocked
@@ -85,18 +82,16 @@ public class MqttPluginTest {
 
             }
         };
-
     }
 
     /**
      * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
-     * 
-     * @throws Exception
-     *             if an error occurred
+     *
+     * @throws Exception if an error occurred
      */
     @Test
     public void testStop(@Mocked final IMqttClient mqttClient, @Mocked final Configuration configuration,
-            @Mocked final ThreadPoolExecutor executor) throws Exception {
+                         @Mocked final ThreadPoolExecutor executor) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
         ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
         clients.put("id", mqttClient);
@@ -129,9 +124,8 @@ public class MqttPluginTest {
 
     /**
      * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
-     * 
-     * @throws Exception
-     *             if an error occurred
+     *
+     * @throws Exception if an error occurred
      */
     @Test
     public void testStopWithDisconnect(@Mocked final IMqttClient mqttClient) throws Exception {
@@ -157,9 +151,8 @@ public class MqttPluginTest {
 
     /**
      * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
-     * 
-     * @throws Exception
-     *             if an error occurred
+     *
+     * @throws Exception if an error occurred
      */
     @Test
     public void testStopWithException(@Mocked final IMqttClient mqttClient) throws Exception {
@@ -193,7 +186,7 @@ public class MqttPluginTest {
      */
     @Test(expected = SeedException.class)
     public void testInitWithoutMqttURI(@Mocked final Configuration configuration) {
-        final String[] clients = { "client" };
+        final String[] clients = {"client"};
         MqttPlugin plugin = new MqttPlugin();
         new Expectations() {
             {
@@ -250,7 +243,7 @@ public class MqttPluginTest {
      */
     @Test(expected = SeedException.class)
     public void testInitWithReconnectionModeError(@Mocked final Configuration configuration) {
-        final String[] clients = { "clientOK1" };
+        final String[] clients = {"clientOK1"};
         MqttPlugin plugin = new MqttPlugin();
         new Expectations() {
             {
@@ -280,7 +273,7 @@ public class MqttPluginTest {
     @Test
     public void testInitWithoutReconnectionConfiguration(@Mocked final Configuration configuration) {
         final String clientName = "clientOK1";
-        final String[] clients = { clientName };
+        final String[] clients = {clientName};
         final Collection<Class<?>> classes = new ArrayList<Class<?>>();
         MqttPlugin plugin = new MqttPlugin();
         final String defaultConfigString = "xx";
@@ -333,7 +326,7 @@ public class MqttPluginTest {
     @Test
     public void testInitWithDefaultReconnection(@Mocked final Configuration configuration) {
         final String clientName = "clientOK1";
-        final String[] clients = { clientName };
+        final String[] clients = {clientName};
         final Collection<Class<?>> classes = new ArrayList<Class<?>>();
         MqttPlugin plugin = new MqttPlugin();
         final String defaultConfigString = "xx";
@@ -384,7 +377,7 @@ public class MqttPluginTest {
     public void testInitWithCustomClient(@Mocked final Configuration configuration) {
         final String clientName = "clientOK1";
         final String defaultString = "xx";
-        final String[] clients = { clientName };
+        final String[] clients = {clientName};
         final Collection<Class<?>> classes = new ArrayList<Class<?>>();
         MqttPlugin plugin = new MqttPlugin();
         new Expectations() {
@@ -437,7 +430,7 @@ public class MqttPluginTest {
     @Test(expected = SeedException.class)
     public void testInitWithListenerMisconfigured(@Mocked final Configuration configuration) {
         final String clientName = "client1";
-        final String[] clients = { "clientOK1" };
+        final String[] clients = {"clientOK1"};
         final Collection<Class<?>> classes = new ArrayList<Class<?>>();
         classes.add(ListenerWithError.class);
         MqttPlugin plugin = new MqttPlugin();
@@ -476,7 +469,7 @@ public class MqttPluginTest {
     @Test
     public void testInitWithListener(@Mocked final Configuration configuration) {
         final String clientName = "clientOK1";
-        final String[] clients = { clientName };
+        final String[] clients = {clientName};
         final Collection<Class<?>> classes = new ArrayList<Class<?>>();
         classes.add(Listener1.class);
         MqttPlugin plugin = new MqttPlugin();
@@ -561,7 +554,7 @@ public class MqttPluginTest {
     @Test
     public void testInitWithPublisher(@Mocked final Configuration configuration) {
         final String clientName = "clientOK1";
-        final String[] clients = { clientName };
+        final String[] clients = {clientName};
         final Collection<Class<?>> listenerClasses = new ArrayList<Class<?>>();
         final Collection<Class<?>> rejectedHandlers = new ArrayList<Class<?>>();
         final Collection<Class<?>> classes = new ArrayList<Class<?>>();
@@ -615,11 +608,11 @@ public class MqttPluginTest {
      * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
      * .
      */
-    @Test(expected=SeedException.class)
+    @Test(expected = SeedException.class)
     public void testInitWithPublisherAndNoClient(@Mocked final Configuration configuration) {
         final String clientName = "clientOK1";
         final String clientName2 = "clientNOK";
-        final String[] clients = { clientName };
+        final String[] clients = {clientName};
         final Collection<Class<?>> listenerClasses = new ArrayList<Class<?>>();
         final Collection<Class<?>> rejectedHandlers = new ArrayList<Class<?>>();
         final Collection<Class<?>> classes = new ArrayList<Class<?>>();
@@ -672,13 +665,12 @@ public class MqttPluginTest {
      * Test method for
      * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
      * .
-     * 
-     * @throws Exception
-     *             if an error occurred
+     *
+     * @throws Exception if an error occurred
      */
     @Test(expected = SeedException.class)
     public void testRegisterPb(@Mocked final Configuration configuration) throws Exception {
-        final String[] clients = { "clientOK1" };
+        final String[] clients = {"clientOK1"};
         final Collection<Class<?>> classes = new ArrayList<Class<?>>();
         MqttPlugin plugin = new MqttPlugin();
         new Expectations() {
@@ -738,7 +730,7 @@ public class MqttPluginTest {
         MockUp<MqttModule> module = new MockUp<MqttModule>() {
             @Mock
             public void $init(ConcurrentHashMap<String, IMqttClient> mqttClients,
-                    ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions) {
+                              ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions) {
             }
 
         };
@@ -765,7 +757,7 @@ public class MqttPluginTest {
     @Test
     public void testInitWithRejectHandler(@Mocked final Configuration configuration) {
         final String clientName = "clientOK1";
-        final String[] clients = { clientName };
+        final String[] clients = {clientName};
         final Collection<Class<?>> classes = new ArrayList<Class<?>>();
         classes.add(MyRejectHandler.class);
         final Collection<Class<?>> listenerClasses = new ArrayList<Class<?>>();
@@ -818,11 +810,11 @@ public class MqttPluginTest {
      * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
      * .
      */
-    @Test(expected=SeedException.class)
+    @Test(expected = SeedException.class)
     public void testInitWithRejectHandlerAndNoClient(@Mocked final Configuration configuration) {
         final String clientName = "clientOK1";
         final String clientName2 = "clientNOK";
-        final String[] clients = { clientName };
+        final String[] clients = {clientName};
         final Collection<Class<?>> classes = new ArrayList<Class<?>>();
         classes.add(MyRejectHandler.class);
         final Collection<Class<?>> listenerClasses = new ArrayList<Class<?>>();
@@ -878,7 +870,7 @@ public class MqttPluginTest {
     @Test
     public void testInitWithPoolConfiguration(@Mocked final Configuration configuration, @SuppressWarnings("rawtypes") @Mocked final ArrayBlockingQueue queue, @Mocked final ThreadPoolExecutor threadPoolExecutor) {
         final String clientName = "clientOK1";
-        final String[] clients = { clientName };
+        final String[] clients = {clientName};
         final Collection<Class<?>> classes = new ArrayList<Class<?>>();
         MqttPlugin plugin = new MqttPlugin();
         new Expectations() {
@@ -892,12 +884,15 @@ public class MqttPluginTest {
                 configuration.getStringArray(CONNECTION_CLIENTS);
                 result = clients;
 
+                configuration.getString(REJECTED_POLICY, CALLER_RUNS.name());
+                result = CALLER_RUNS.name();
+
                 configuration.getString(BROKER_URI);
                 result = "xx";
 
-                configuration.getBoolean(POOL_ENABLED, Boolean.TRUE);
+                configuration.getBoolean(POOL_ENABLED, Boolean.FALSE);
                 result = Boolean.TRUE;
-                
+
                 specs.get(any);
                 result = classes;
 
@@ -955,14 +950,13 @@ public class MqttPluginTest {
 
     /**
      * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
-     * 
-     * @throws Exception
-     *             if an error occurred
+     *
+     * @throws Exception if an error occurred
      */
     @SuppressWarnings("static-access")
     @Test
     public void testStart(@Mocked final IMqttClient mqttClient, @Mocked final Configuration configuration,
-            @Mocked final Context context, @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
+                          @Mocked final Context context, @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
 
         ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
@@ -975,7 +969,7 @@ public class MqttPluginTest {
         // clients 1 with listener
         final MqttClientDefinition clientDefinition = new MqttClientDefinition("xx", "id");
         final MqttListenerDefinition listenerDefinition = new MqttListenerDefinition(Listener1.class,
-                Listener1.class.getCanonicalName(), new String[] { "topic" }, new int[] { 0 });
+                Listener1.class.getCanonicalName(), new String[]{"topic"}, new int[]{0});
         clientDefinition.setListenerDefinition(listenerDefinition);
         mqttClientDefinitions.put(client1, clientDefinition);
 
@@ -996,15 +990,14 @@ public class MqttPluginTest {
 
     /**
      * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
-     * 
-     * @throws Exception
-     *             if an error occurred
+     *
+     * @throws Exception if an error occurred
      */
     @SuppressWarnings("static-access")
     @Test
     public void testStartWithoutListener(@Mocked final IMqttClient mqttClient,
-            @Mocked final Configuration configuration, @Mocked final Context context,
-            @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
+                                         @Mocked final Configuration configuration, @Mocked final Context context,
+                                         @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
 
         ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
@@ -1033,15 +1026,14 @@ public class MqttPluginTest {
 
     /**
      * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
-     * 
-     * @throws Exception
-     *             if an error occurred
+     *
+     * @throws Exception if an error occurred
      */
     @SuppressWarnings("static-access")
     @Test(expected = SeedException.class)
     public void testStartConnectWithSecurityException(@Mocked final IMqttClient mqttClient,
-            @Mocked final Configuration configuration, @Mocked final Context context,
-            @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
+                                                      @Mocked final Configuration configuration, @Mocked final Context context,
+                                                      @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
 
         ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
@@ -1068,15 +1060,14 @@ public class MqttPluginTest {
 
     /**
      * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
-     * 
-     * @throws Exception
-     *             if an error occurred
+     *
+     * @throws Exception if an error occurred
      */
     @SuppressWarnings("static-access")
     @Test(expected = SeedException.class)
     public void testStartConnectWithException(@Mocked final IMqttClient mqttClient,
-            @Mocked final Configuration configuration, @Mocked final Context context,
-            @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
+                                              @Mocked final Configuration configuration, @Mocked final Context context,
+                                              @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
 
         ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
@@ -1103,15 +1094,14 @@ public class MqttPluginTest {
 
     /**
      * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
-     * 
-     * @throws Exception
-     *             if an error occurred
+     *
+     * @throws Exception if an error occurred
      */
     @SuppressWarnings("static-access")
     @Test(expected = SeedException.class)
     public void testStartWithListenerException(@Mocked final IMqttClient mqttClient,
-            @Mocked final Configuration configuration, @Mocked final Context context,
-            @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
+                                               @Mocked final Configuration configuration, @Mocked final Context context,
+                                               @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
 
         ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
@@ -1124,7 +1114,7 @@ public class MqttPluginTest {
         // clients 1 with listener
         final MqttClientDefinition clientDefinition = new MqttClientDefinition("xx", "id");
         final MqttListenerDefinition listenerDefinition = new MqttListenerDefinition(Listener1.class,
-                Listener1.class.getCanonicalName(), new String[] { "topic" }, new int[] { 0 });
+                Listener1.class.getCanonicalName(), new String[]{"topic"}, new int[]{0});
         clientDefinition.setListenerDefinition(listenerDefinition);
         mqttClientDefinitions.put(client1, clientDefinition);
 
