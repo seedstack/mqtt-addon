@@ -46,14 +46,15 @@ public class MqttModuleTest {
     public void testConfigure(@Mocked final Binder binder, @Mocked final MqttClientUtils mqttClientUtils) {
         ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
         ConcurrentHashMap<String, IMqttClient> mqttClients = new ConcurrentHashMap<String, IMqttClient>();
+        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
         final String uri = "uri";
         final String clientId = "id";
         final String clientName = "name";
         MqttClientDefinition clientDefinition = new MqttClientDefinition(uri, clientId);
         mqttClientDefinitions.put(clientName, clientDefinition);
-
+        mqttCallbackAdapters.put(clientName, new MqttCallbackAdapter(mqttClient, clientDefinition));
         mqttClients.put(clientName, mqttClient);
-        MqttModule module = new MqttModule(mqttClients, mqttClientDefinitions);
+        MqttModule module = new MqttModule(mqttClients, mqttClientDefinitions, mqttCallbackAdapters);
 
         module.configure(binder);
 
@@ -76,6 +77,8 @@ public class MqttModuleTest {
             @Mocked final Configuration configuration) throws Exception {
         ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
         ConcurrentHashMap<String, IMqttClient> mqttClients = new ConcurrentHashMap<String, IMqttClient>();
+        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
+
         final String uri = "uri";
         final String clientId = "id";
         final String clientName = "name";
@@ -91,8 +94,9 @@ public class MqttModuleTest {
 
         mqttClientDefinitions.put(clientName, clientDefinition);
 
+        mqttCallbackAdapters.put(clientName, new MqttCallbackAdapter(mqttClient, clientDefinition));
         mqttClients.put(clientName, mqttClient);
-        MqttModule module = new MqttModule(mqttClients, mqttClientDefinitions);
+        MqttModule module = new MqttModule(mqttClients, mqttClientDefinitions, mqttCallbackAdapters);
 
         module.configure(binder);
 
@@ -122,6 +126,8 @@ public class MqttModuleTest {
             throws Exception {
         ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
         ConcurrentHashMap<String, IMqttClient> mqttClients = new ConcurrentHashMap<String, IMqttClient>();
+        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
+
         final String uri = "uri";
         final String clientId = "id";
         final String clientName = "name";
@@ -131,8 +137,9 @@ public class MqttModuleTest {
         clientDefinition.setPublisherDefinition(publisherDefinition);
         mqttClientDefinitions.put(clientName, clientDefinition);
 
+        mqttCallbackAdapters.put(clientName, new MqttCallbackAdapter(mqttClient, clientDefinition));
         mqttClients.put(clientName, mqttClient);
-        MqttModule module = new MqttModule(mqttClients, mqttClientDefinitions);
+        MqttModule module = new MqttModule(mqttClients, mqttClientDefinitions, mqttCallbackAdapters);
 
         module.configure(binder);
 

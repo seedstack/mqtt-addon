@@ -78,6 +78,8 @@ public class MqttPlugin extends AbstractPlugin {
     private Configuration mqttConfiguration;
     private ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
     private ConcurrentHashMap<String, IMqttClient> mqttClients = new ConcurrentHashMap<String, IMqttClient>();
+    private ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
+
 
 
     @Override
@@ -162,12 +164,16 @@ public class MqttPlugin extends AbstractPlugin {
                 LOGGER.debug("Create MqttClient [{}]", entry.getKey());
                 IMqttClient mqttClient = new MqttClient(clientDefinition.getUri(), clientDefinition.getClientId());
                 mqttClients.put(entry.getKey(), mqttClient);
+                LOGGER.debug("Create MqttCallback [{}]", entry.getKey());
+                MqttCallbackAdapter mqttCallbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
+                mqttCallbackAdapters.put(entry.getKey(), mqttCallbackAdapter);
             } catch (MqttException e) {
                 throw SeedException.wrap(e, MqttErrorCodes.CAN_NOT_CREATE_MQTT_CLIENT);
             }
         }
 
     }
+
 
     private void configureMqttListeners(Collection<Class<?>> listenerCandidates) {
         for (Class<?> candidate : listenerCandidates) {
@@ -253,7 +259,7 @@ public class MqttPlugin extends AbstractPlugin {
 
     @Override
     public Object nativeUnitModule() {
-        return new MqttModule(mqttClients, mqttClientDefinitions);
+        return new MqttModule(mqttClients, mqttClientDefinitions, mqttCallbackAdapters);
     }
 
     @Override
@@ -310,29 +316,8 @@ public class MqttPlugin extends AbstractPlugin {
     @Override
     public void start(Context context) {
         super.start(context);
-        for (Entry<String, MqttClientDefinition> entry : mqttClientDefinitions.entrySet()) {
-            String clientName = entry.getKey();
-            MqttClientDefinition clientDefinition = entry.getValue();
-            IMqttClient mqttClient = mqttClients.get(clientName);
-            try {
-                MqttClientUtils.connect(mqttClient, clientDefinition);
-                LOGGER.debug("Connect new MqttClient [{}] ", clientName);
-            } catch (MqttSecurityException e) {
-                throw SeedException.wrap(e, MqttErrorCodes.CAN_NOT_CONNECT_MQTT_CLIENT).put("client", clientName);
-            } catch (MqttException e) {
-                throw SeedException.wrap(e, MqttErrorCodes.CAN_NOT_CONNECT_MQTT_CLIENT).put("client", clientName);
-            }
-            MqttListenerDefinition listenerDefinition = clientDefinition.getListenerDefinition();
-            if (listenerDefinition != null) {
-                String[] topicFiler = listenerDefinition.getTopicFilter();
-                try {
-                    LOGGER.debug("Subscribe MqttClient [{}] to topicFiler {}", clientName, topicFiler);
-                    MqttClientUtils.subscribe(mqttClient, listenerDefinition);
-                } catch (MqttException e) {
-                    throw SeedException.wrap(e, MqttErrorCodes.CAN_NOT_CONNECT_SUBSCRIBE).put("client", clientName)
-                            .put("topic", topicFiler);
-                }
-            }
+        for (Entry<String, MqttCallbackAdapter> entry : mqttCallbackAdapters.entrySet()) {
+            entry.getValue().start();
         }
     }
 }

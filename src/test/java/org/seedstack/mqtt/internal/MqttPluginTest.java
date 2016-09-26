@@ -730,7 +730,8 @@ public class MqttPluginTest {
         MockUp<MqttModule> module = new MockUp<MqttModule>() {
             @Mock
             public void $init(ConcurrentHashMap<String, IMqttClient> mqttClients,
-                              ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions) {
+                              ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions,
+                              ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters) {
             }
 
         };
@@ -951,15 +952,18 @@ public class MqttPluginTest {
     /**
      * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
      *
-     * @throws Exception if an error occurred
+     * @throws Exception
+     *             if an error occurred
      */
     @SuppressWarnings("static-access")
     @Test
     public void testStart(@Mocked final IMqttClient mqttClient, @Mocked final Configuration configuration,
-                          @Mocked final Context context, @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
+            @Mocked final Context context, @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
 
         ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
+        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
+
         final String client1 = "clients";
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
@@ -969,13 +973,17 @@ public class MqttPluginTest {
         // clients 1 with listener
         final MqttClientDefinition clientDefinition = new MqttClientDefinition("xx", "id");
         final MqttListenerDefinition listenerDefinition = new MqttListenerDefinition(Listener1.class,
-                Listener1.class.getCanonicalName(), new String[]{"topic"}, new int[]{0});
+                Listener1.class.getCanonicalName(), new String[] { "topic" }, new int[] { 0 });
         clientDefinition.setListenerDefinition(listenerDefinition);
         mqttClientDefinitions.put(client1, clientDefinition);
-
+        mqttCallbackAdapters.put(client1, new MqttCallbackAdapter(mqttClient, clientDefinition));
+        MqttModule module = new MqttModule(clients, mqttClientDefinitions, mqttCallbackAdapters);
+        clients.put(client1, mqttClient);
+        Deencapsulation.setField(plugin, "mqttCallbackAdapters", mqttCallbackAdapters);
         Deencapsulation.setField(plugin, "mqttClientDefinitions", mqttClientDefinitions);
 
         plugin.start(context);
+
 
         new Verifications() {
             {
@@ -991,16 +999,19 @@ public class MqttPluginTest {
     /**
      * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
      *
-     * @throws Exception if an error occurred
+     * @throws Exception
+     *             if an error occurred
      */
     @SuppressWarnings("static-access")
     @Test
     public void testStartWithoutListener(@Mocked final IMqttClient mqttClient,
-                                         @Mocked final Configuration configuration, @Mocked final Context context,
-                                         @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
+            @Mocked final Configuration configuration, @Mocked final Context context,
+            @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
 
         ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
+        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
+
         final String client1 = "clients";
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
@@ -1009,7 +1020,10 @@ public class MqttPluginTest {
 
         final MqttClientDefinition clientDefinition = new MqttClientDefinition("xx", "id");
         mqttClientDefinitions.put(client1, clientDefinition);
-
+        mqttCallbackAdapters.put(client1, new MqttCallbackAdapter(mqttClient, clientDefinition));
+        MqttModule module = new MqttModule(clients, mqttClientDefinitions, mqttCallbackAdapters);
+        clients.put(client1, mqttClient);
+        Deencapsulation.setField(plugin, "mqttCallbackAdapters", mqttCallbackAdapters);
         Deencapsulation.setField(plugin, "mqttClientDefinitions", mqttClientDefinitions);
 
         plugin.start(context);
@@ -1027,16 +1041,19 @@ public class MqttPluginTest {
     /**
      * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
      *
-     * @throws Exception if an error occurred
+     * @throws Exception
+     *             if an error occurred
      */
     @SuppressWarnings("static-access")
-    @Test(expected = SeedException.class)
+    @Test
     public void testStartConnectWithSecurityException(@Mocked final IMqttClient mqttClient,
-                                                      @Mocked final Configuration configuration, @Mocked final Context context,
-                                                      @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
+            @Mocked final Configuration configuration, @Mocked final Context context,
+            @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
 
         ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
+        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
+
         final String client1 = "clients";
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
@@ -1045,7 +1062,10 @@ public class MqttPluginTest {
 
         final MqttClientDefinition clientDefinition = new MqttClientDefinition("xx", "id");
         mqttClientDefinitions.put(client1, clientDefinition);
-
+        mqttCallbackAdapters.put(client1, new MqttCallbackAdapter(mqttClient, clientDefinition));
+        MqttModule module = new MqttModule(clients, mqttClientDefinitions, mqttCallbackAdapters);
+        clients.put(client1, mqttClient);
+        Deencapsulation.setField(plugin, "mqttCallbackAdapters", mqttCallbackAdapters);
         Deencapsulation.setField(plugin, "mqttClientDefinitions", mqttClientDefinitions);
 
         new Expectations() {
@@ -1061,16 +1081,19 @@ public class MqttPluginTest {
     /**
      * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
      *
-     * @throws Exception if an error occurred
+     * @throws Exception
+     *             if an error occurred
      */
     @SuppressWarnings("static-access")
-    @Test(expected = SeedException.class)
+    @Test
     public void testStartConnectWithException(@Mocked final IMqttClient mqttClient,
-                                              @Mocked final Configuration configuration, @Mocked final Context context,
-                                              @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
+            @Mocked final Configuration configuration, @Mocked final Context context,
+            @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
 
         ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
+        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
+
         final String client1 = "clients";
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
@@ -1079,7 +1102,10 @@ public class MqttPluginTest {
 
         final MqttClientDefinition clientDefinition = new MqttClientDefinition("xx", "id");
         mqttClientDefinitions.put(client1, clientDefinition);
-
+        mqttCallbackAdapters.put(client1, new MqttCallbackAdapter(mqttClient, clientDefinition));
+        MqttModule module = new MqttModule(clients, mqttClientDefinitions, mqttCallbackAdapters);
+        clients.put(client1, mqttClient);
+        Deencapsulation.setField(plugin, "mqttCallbackAdapters", mqttCallbackAdapters);
         Deencapsulation.setField(plugin, "mqttClientDefinitions", mqttClientDefinitions);
 
         new Expectations() {
@@ -1095,16 +1121,19 @@ public class MqttPluginTest {
     /**
      * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
      *
-     * @throws Exception if an error occurred
+     * @throws Exception
+     *             if an error occurred
      */
     @SuppressWarnings("static-access")
-    @Test(expected = SeedException.class)
+    @Test
     public void testStartWithListenerException(@Mocked final IMqttClient mqttClient,
-                                               @Mocked final Configuration configuration, @Mocked final Context context,
-                                               @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
+            @Mocked final Configuration configuration, @Mocked final Context context,
+            @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
 
         ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
+        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
+
         final String client1 = "clients";
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
@@ -1114,10 +1143,13 @@ public class MqttPluginTest {
         // clients 1 with listener
         final MqttClientDefinition clientDefinition = new MqttClientDefinition("xx", "id");
         final MqttListenerDefinition listenerDefinition = new MqttListenerDefinition(Listener1.class,
-                Listener1.class.getCanonicalName(), new String[]{"topic"}, new int[]{0});
+                Listener1.class.getCanonicalName(), new String[] { "topic" }, new int[] { 0 });
         clientDefinition.setListenerDefinition(listenerDefinition);
         mqttClientDefinitions.put(client1, clientDefinition);
-
+        mqttCallbackAdapters.put(client1, new MqttCallbackAdapter(mqttClient, clientDefinition));
+        MqttModule module = new MqttModule(clients, mqttClientDefinitions, mqttCallbackAdapters);
+        clients.put(client1, mqttClient);
+        Deencapsulation.setField(plugin, "mqttCallbackAdapters", mqttCallbackAdapters);
         Deencapsulation.setField(plugin, "mqttClientDefinitions", mqttClientDefinitions);
 
         new Expectations() {

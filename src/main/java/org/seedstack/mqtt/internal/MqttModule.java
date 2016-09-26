@@ -32,11 +32,13 @@ class MqttModule extends AbstractModule {
 
     private ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions;
     private ConcurrentHashMap<String, IMqttClient> mqttClients;
+    private ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters;
 
     public MqttModule(ConcurrentHashMap<String, IMqttClient> mqttClients,
-            ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions) {
+            ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions, ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters) {
         this.mqttClientDefinitions = mqttClientDefinitions;
         this.mqttClients = mqttClients;
+        this.mqttCallbackAdapters = mqttCallbackAdapters;
     }
 
     @Override
@@ -47,7 +49,7 @@ class MqttModule extends AbstractModule {
             String clientName = entry.getKey();
             IMqttClient mqttClient = mqttClients.get(clientName);
             bind(IMqttClient.class).annotatedWith(Names.named(clientName)).toInstance(mqttClient);
-            MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
+            MqttCallbackAdapter callbackAdapter = mqttCallbackAdapters.get(clientName);
             mqttClient.setCallback(callbackAdapter);
 
             MqttPublisherDefinition publisherDefinition = clientDefinition.getPublisherDefinition();
