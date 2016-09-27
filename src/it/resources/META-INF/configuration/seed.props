@@ -18,9 +18,11 @@ client.client1.pool.core = 5
 client.client1.pool.max = 5
 client.client1.pool.queue = 10
 client.client1.pool.keep-alive = 60
-
+client.client1.pool.rejected-policy = ABORT
 
 client.client2.server-uri = tcp://localhost:1883
+client.client2.pool.rejected-policy = ABORT
+
 client.clientOK1.server-uri = tcp://localhost:1883
 
 client.client3.server-uri = tcp://localhost:1885
@@ -33,6 +35,8 @@ client.client3.pool.core = 5
 client.client3.pool.max = 5
 client.client3.pool.queue = 10
 client.client3.pool.keep-alive = 60
+client.client3.pool.rejected-policy = ABORT
+
 
 client.client4.server-uri = tcp://localhost:1886
 client.client4.client-id = id4
@@ -44,6 +48,8 @@ client.client4.pool.core = 5
 client.client4.pool.max = 5
 client.client4.pool.queue = 10
 client.client4.pool.keep-alive = 60
+client.client4.pool.rejected-policy = ABORT
+
 []
 org.seedstack.custom.publishers.test = client3, client4
 test.dest1.name = topic, topic2, topic3

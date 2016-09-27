@@ -6,33 +6,26 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 /**
- * 
+ *
  */
 package org.seedstack.mqtt.internal;
 
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ThreadPoolExecutor;
-
-import javax.inject.Inject;
-
-import org.eclipse.paho.client.mqttv3.IMqttClient;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.MqttSecurityException;
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import org.eclipse.paho.client.mqttv3.*;
 import org.seedstack.mqtt.MqttRejectedExecutionHandler;
 import org.seedstack.seed.SeedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.Injector;
-import com.google.inject.Key;
+import javax.inject.Inject;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * {@link MqttCallback} used for default reconnection mode.
- * 
+ *
  * @author thierry.bouvet@mpsa.com
  *
  */
@@ -52,7 +45,7 @@ class MqttCallbackAdapter implements MqttCallback {
 
     /**
      * Default constructor.
-     * 
+     *
      * @param mqttClient
      *            mqttClient to reconnect if needed.
      * @param clientDefinition
@@ -79,6 +72,7 @@ class MqttCallbackAdapter implements MqttCallback {
             break;
         case ALWAYS:
         default:
+            LOGGER.debug("reconnecting mqttclient {}", mqttClient.getClientId(), cause);
             reconnect();
             break;
         }
@@ -87,21 +81,13 @@ class MqttCallbackAdapter implements MqttCallback {
     private void reconnect() {
         final Timer timer = new Timer();
         TimerTask task = new TimerTask() {
-
             @Override
             public void run() {
                 try {
-                    LOGGER.debug("Trying to reconnect {}", mqttClient.getClientId());
-                    MqttClientUtils.connect(mqttClient, clientDefinition);
-                    LOGGER.info("Client {} is now reconnected", mqttClient.getClientId());
-                    if (clientDefinition.getListenerDefinition() != null) {
-                        MqttClientUtils.subscribe(mqttClient, clientDefinition.getListenerDefinition());
-                    }
+                    connect();
                     timer.cancel();
-                } catch (MqttSecurityException e) {
-                    LOGGER.trace("Can not reconnect mqttclient {}", mqttClient.getClientId(), e);
                 } catch (MqttException e) {
-                    LOGGER.trace("Can not reconnect mqttclient {}", mqttClient.getClientId(), e);
+                    LOGGER.debug("Can not connect mqttclient {}", mqttClient.getClientId(), e);
                 }
 
             }
@@ -109,6 +95,24 @@ class MqttCallbackAdapter implements MqttCallback {
         timer.scheduleAtFixedRate(task, clientDefinition.getReconnectionInterval() * 1000,
                 clientDefinition.getReconnectionInterval() * 1000);
 
+    }
+
+    private void connect() throws MqttException {
+        LOGGER.debug("Trying to connect {}", mqttClient.getClientId());
+        MqttClientUtils.connect(mqttClient, clientDefinition);
+        LOGGER.info("Client {} is now connected", mqttClient.getClientId());
+        if (clientDefinition.getListenerDefinition() != null) {
+            MqttClientUtils.subscribe(mqttClient, clientDefinition.getListenerDefinition());
+        }
+    }
+
+    void start() {
+        try {
+            connect();
+        } catch (MqttException e) {
+            LOGGER.debug("Can not connect mqttclient {}", mqttClient.getClientId(), e);
+            connectionLost(e);
+        }
     }
 
     @Override
