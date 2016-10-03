@@ -1,3 +1,6 @@
+# Version 1.2.1
+* [new] Mqtt client information accessible through a plugin Facet
+
 # Version 1.2.0 (2016-09-30)
 * [new] Support of policies for handling rejected tasks (received messages): multiple behaviors can be specified, CALLER_RUN(default), ABORT, DISCARD and DISCARD_OLDEST
 * [chg] The MqttClient reconnection feature is also supported at kernel startup

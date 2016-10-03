@@ -13,6 +13,7 @@ package org.seedstack.mqtt.internal;
 import org.apache.commons.configuration.Configuration;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.seedstack.mqtt.MqttRejectedExecutionHandler;
+import org.seedstack.mqtt.spi.MqttPoolConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,19 +46,21 @@ class MqttPoolDefinition {
     private Class<? extends MqttRejectedExecutionHandler> rejectHandlerClass;
     private Boolean available = Boolean.TRUE;
     private ThreadPoolExecutor threadPoolExecutor;
+    private MqttPoolConfiguration mqttPoolConfiguration;
     private static final Logger LOGGER = LoggerFactory.getLogger(MqttPoolDefinition.class);
 
 
     public MqttPoolDefinition(Configuration configuration) {
         this.available = configuration.getBoolean(POOL_ENABLED, Boolean.FALSE);
         if (this.available) {
-            int coreSize = configuration.getInt(POOL_CORE_SIZE, DEFAULT_CORE_SIZE);
-            int maxSize = configuration.getInt(POOL_MAX_SIZE, DEFAULT_MAX_SIZE);
-            int queueSize = configuration.getInt(POOL_QUEUE_SIZE, DEFAULT_QUEUE_SIZE);
-            int keepAlive = configuration.getInt(POOL_KEEP_ALIVE, DEFAULT_KEEP_ALIVE);
+            mqttPoolConfiguration = new MqttPoolConfiguration();
+            mqttPoolConfiguration.setCoreSize(configuration.getInt(POOL_CORE_SIZE, DEFAULT_CORE_SIZE));
+            mqttPoolConfiguration.setMaxSize(configuration.getInt(POOL_MAX_SIZE, DEFAULT_MAX_SIZE));
+            mqttPoolConfiguration.setQueueSize(configuration.getInt(POOL_QUEUE_SIZE, DEFAULT_QUEUE_SIZE));
+            mqttPoolConfiguration.setKeepAlive(configuration.getInt(POOL_KEEP_ALIVE, DEFAULT_KEEP_ALIVE));
             rejectedExecutionPolicy = getRejectedExecutionPolicy(configuration);
-            this.threadPoolExecutor = new ThreadPoolExecutor(coreSize, maxSize, keepAlive, TimeUnit.SECONDS,
-                    new ArrayBlockingQueue<Runnable>(queueSize));
+            this.threadPoolExecutor = new ThreadPoolExecutor(mqttPoolConfiguration.getCoreSize(), mqttPoolConfiguration.getMaxSize(), mqttPoolConfiguration.getKeepAlive(), TimeUnit.SECONDS,
+                    new ArrayBlockingQueue<Runnable>(mqttPoolConfiguration.getQueueSize()));
             threadPoolExecutor.setRejectedExecutionHandler(getRejectedExecutionHandler());
         }
     }
@@ -110,4 +113,7 @@ class MqttPoolDefinition {
         return threadPoolExecutor;
     }
 
+    public MqttPoolConfiguration getMqttPoolConfiguration() {
+        return mqttPoolConfiguration;
+    }
 }
