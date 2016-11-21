@@ -10,38 +10,31 @@
  */
 package org.seedstack.mqtt.internal;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.google.common.collect.Lists;
+import io.nuun.kernel.api.plugin.InitState;
+import io.nuun.kernel.api.plugin.context.Context;
+import io.nuun.kernel.api.plugin.context.InitContext;
+import io.nuun.kernel.api.plugin.request.ClasspathScanRequest;
+import io.nuun.kernel.core.AbstractPlugin;
 import org.apache.commons.configuration.Configuration;
-import org.eclipse.paho.client.mqttv3.IMqttClient;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttSecurityException;
+import org.eclipse.paho.client.mqttv3.*;
 import org.kametic.specifications.Specification;
 import org.seedstack.mqtt.MqttListener;
 import org.seedstack.mqtt.MqttPublishHandler;
 import org.seedstack.mqtt.MqttRejectHandler;
 import org.seedstack.mqtt.MqttRejectedExecutionHandler;
+import org.seedstack.mqtt.spi.MqttClientInfo;
+import org.seedstack.mqtt.spi.MqttClientStats;
+import org.seedstack.mqtt.spi.MqttInfo;
 import org.seedstack.seed.Application;
 import org.seedstack.seed.SeedException;
 import org.seedstack.seed.core.internal.application.ApplicationPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
-
-import io.nuun.kernel.api.plugin.InitState;
-import io.nuun.kernel.api.plugin.context.Context;
-import io.nuun.kernel.api.plugin.context.InitContext;
-import io.nuun.kernel.api.plugin.request.ClasspathScanRequest;
-import io.nuun.kernel.core.AbstractPlugin;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This plugin provides MQTT support through a plain configuration. It uses Paho
@@ -49,7 +42,7 @@ import io.nuun.kernel.core.AbstractPlugin;
  *
  * @author thierry.bouvet@mpsa.com
  */
-public class MqttPlugin extends AbstractPlugin {
+public class MqttPlugin extends AbstractPlugin implements MqttInfo {
 
     private static final String CONNECTION_CLIENT = "client";
     private static final String CONNECTION_CLIENTS = "clients";
@@ -79,7 +72,6 @@ public class MqttPlugin extends AbstractPlugin {
     private ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
     private ConcurrentHashMap<String, IMqttClient> mqttClients = new ConcurrentHashMap<String, IMqttClient>();
     private ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
-
 
 
     @Override
@@ -319,5 +311,37 @@ public class MqttPlugin extends AbstractPlugin {
         for (Entry<String, MqttCallbackAdapter> entry : mqttCallbackAdapters.entrySet()) {
             entry.getValue().start();
         }
+    }
+
+
+    @Override
+    public Set<String> getClientNames() {
+        return Collections.unmodifiableSet(new HashSet<String>(Collections.list(mqttClientDefinitions.keys())));
+    }
+
+    @Override
+    public MqttClientInfo getClientInfo(String id) {
+        MqttClientDefinition mqttClientDefinition = mqttClientDefinitions.get(id);
+        MqttConnectOptions mqttConnectOptions = mqttClientDefinition.getConnectOptionsDefinition().getMqttConnectOptions();
+        MqttClientInfo mqttClientInfo = new MqttClientInfo();
+        mqttClientInfo.setClientId(mqttClientDefinition.getClientId());
+        mqttClientInfo.setMqttPoolConfiguration(mqttClientDefinition.getPoolDefinition().getMqttPoolConfiguration());
+        mqttClientInfo.setUri(mqttClientDefinition.getUri());
+        mqttClientInfo.setReconnectionInterval(mqttClientDefinition.getReconnectionInterval());
+        if (mqttClientDefinition.getListenerDefinition() != null) {
+            mqttClientInfo.setTopicFilters(mqttClientDefinition.getListenerDefinition().getTopicFilter());
+        }
+        if (mqttConnectOptions != null) {
+            mqttClientInfo.setKeepAliveInterval(mqttConnectOptions.getKeepAliveInterval());
+            mqttClientInfo.setCleanSession(mqttConnectOptions.isCleanSession());
+            mqttClientInfo.setConnectionTimeout(mqttConnectOptions.getConnectionTimeout());
+            mqttClientInfo.setMqttVersion(mqttConnectOptions.getMqttVersion());
+        }
+        return mqttClientInfo;
+    }
+
+    @Override
+    public MqttClientStats getClientStats(String id) {
+        return null;
     }
 }

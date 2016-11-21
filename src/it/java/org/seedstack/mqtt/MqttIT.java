@@ -19,6 +19,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.seedstack.mqtt.fixtures.BrokerFixture;
 import org.seedstack.mqtt.fixtures.TestMqttListener;
+import org.seedstack.mqtt.spi.MqttClientInfo;
+import org.seedstack.mqtt.spi.MqttInfo;
 import org.seedstack.seed.it.AfterKernel;
 import org.seedstack.seed.it.BeforeKernel;
 import org.seedstack.seed.it.SeedITRunner;
@@ -43,6 +45,8 @@ public class MqttIT {
     @Named("org.seedstack.mqtt.fixtures.TestMqttListener")
     MqttCallback mqttCallback;
 
+    @Inject
+    MqttInfo mqttInfo;
 
     @BeforeKernel
     public static void startBroker() throws Exception {
@@ -77,5 +81,17 @@ public class MqttIT {
         executorService.shutdown();
         String result = task.get(2, TimeUnit.SECONDS);
         Assertions.assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    public void mqttInfoFacetTest() {
+        Assertions.assertThat(mqttInfo).isNotNull();
+        Assertions.assertThat(mqttInfo.getClientNames()).hasSize(5);
+        for (String clientId : mqttInfo.getClientNames()) {
+            MqttClientInfo mqttClientInfo = mqttInfo.getClientInfo(clientId);
+            Assertions.assertThat(mqttClientInfo).isNotNull();
+            Assertions.assertThat(mqttClientInfo.getClientId()).isNotNull();
+            Assertions.assertThat(mqttInfo.getClientStats(clientId)).isNull();
+        }
     }
 }
