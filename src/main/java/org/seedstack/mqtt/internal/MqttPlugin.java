@@ -17,14 +17,17 @@ import io.nuun.kernel.api.plugin.context.InitContext;
 import io.nuun.kernel.api.plugin.request.ClasspathScanRequest;
 import io.nuun.kernel.core.AbstractPlugin;
 import org.apache.commons.configuration.Configuration;
-import org.eclipse.paho.client.mqttv3.*;
+import org.eclipse.paho.client.mqttv3.IMqttClient;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
 import org.kametic.specifications.Specification;
 import org.seedstack.mqtt.MqttListener;
 import org.seedstack.mqtt.MqttPublishHandler;
 import org.seedstack.mqtt.MqttRejectHandler;
 import org.seedstack.mqtt.MqttRejectedExecutionHandler;
 import org.seedstack.mqtt.spi.MqttClientInfo;
-import org.seedstack.mqtt.spi.MqttClientStats;
 import org.seedstack.mqtt.spi.MqttInfo;
 import org.seedstack.seed.Application;
 import org.seedstack.seed.SeedException;
@@ -32,8 +35,15 @@ import org.seedstack.seed.core.internal.application.ApplicationPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -338,10 +348,5 @@ public class MqttPlugin extends AbstractPlugin implements MqttInfo {
             mqttClientInfo.setMqttVersion(mqttConnectOptions.getMqttVersion());
         }
         return mqttClientInfo;
-    }
-
-    @Override
-    public MqttClientStats getClientStats(String id) {
-        return null;
     }
 }

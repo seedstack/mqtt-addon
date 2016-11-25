@@ -91,7 +91,6 @@ public class MqttIT {
             MqttClientInfo mqttClientInfo = mqttInfo.getClientInfo(clientId);
             Assertions.assertThat(mqttClientInfo).isNotNull();
             Assertions.assertThat(mqttClientInfo.getClientId()).isNotNull();
-            Assertions.assertThat(mqttInfo.getClientStats(clientId)).isNull();
         }
     }
 }

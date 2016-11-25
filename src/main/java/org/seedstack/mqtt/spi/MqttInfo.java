@@ -13,24 +13,18 @@ import java.util.Set;
 
 @Facet
 public interface MqttInfo {
-
     /**
      * Set of configured mqtt client names
+     *
      * @return Set of client names
      */
     Set<String> getClientNames();
 
     /**
      * Provides an MqttClientInfo instance for a configured clientName
+     *
      * @param clientName a configured client name
      * @return MqttClientInfo
      */
     MqttClientInfo getClientInfo(String clientName);
-
-    /**
-     * Not implemented yet
-     * @param clientName
-     * @return MqttClientStats
-     */
-    MqttClientStats getClientStats(String clientName);
 }
