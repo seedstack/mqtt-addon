@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 @RunWith(SeedITRunner.class)
 public class MultiListenerIT {
 
-    public static final String CUSTOM_PUBLISHER_CLIENT_LISTS_FILTER = "org.seedstack.custom.publishers.test";
+    public static final String CUSTOM_PUBLISHER_CLIENT_LISTS_FILTER = "test.publisherFilter";
 
     @Inject
     private PublisherService publisherService;

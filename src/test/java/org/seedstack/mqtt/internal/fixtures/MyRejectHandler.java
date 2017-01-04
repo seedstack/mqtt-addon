@@ -14,10 +14,6 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.seedstack.mqtt.MqttRejectHandler;
 import org.seedstack.mqtt.MqttRejectedExecutionHandler;
 
-/**
- * @author thierry.bouvet@mpsa.com
- *
- */
 @MqttRejectHandler(clients = "clientOK1")
 public class MyRejectHandler implements MqttRejectedExecutionHandler {
 

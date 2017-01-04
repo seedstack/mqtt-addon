@@ -23,9 +23,9 @@ public class BrokerFixture {
 
 
     public static void startBroker() throws Exception {
-        startServer(server1, "/configMqttServer.props");
-        startServer(server2, "/configMqttServer2.props");
-        startServer(server3, "/configMqttServer3.props");
+        startServer(server1, "/configMqttServer.conf");
+        startServer(server2, "/configMqttServer2.conf");
+        startServer(server3, "/configMqttServer3.conf");
     }
 
     private static void startServer(Server server, String configFile) throws URISyntaxException, IOException {

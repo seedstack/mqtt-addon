@@ -18,11 +18,11 @@ public class MqttClientInfo {
 
     private String mqttReconnectionMode;
 
-    private MqttPoolConfiguration mqttPoolConfiguration;
+    private MqttPoolInfo mqttPoolInfo;
 
     private int reconnectionInterval;
 
-    public String uri;
+    private String uri;
 
     private int keepAliveInterval;
 
@@ -56,12 +56,12 @@ public class MqttClientInfo {
         this.mqttReconnectionMode = mqttReconnectionMode;
     }
 
-    public MqttPoolConfiguration getMqttPoolConfiguration() {
-        return mqttPoolConfiguration;
+    public MqttPoolInfo getMqttPoolInfo() {
+        return mqttPoolInfo;
     }
 
-    public void setMqttPoolConfiguration(MqttPoolConfiguration mqttPoolConfiguration) {
-        this.mqttPoolConfiguration = mqttPoolConfiguration;
+    public void setMqttPoolInfo(MqttPoolInfo mqttPoolInfo) {
+        this.mqttPoolInfo = mqttPoolInfo;
     }
 
     public int getReconnectionInterval() {

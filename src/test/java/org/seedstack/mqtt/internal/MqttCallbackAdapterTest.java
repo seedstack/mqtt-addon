@@ -6,15 +6,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 /**
- * 
+ *
  */
 package org.seedstack.mqtt.internal;
 
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import mockit.Deencapsulation;
+import mockit.Expectations;
+import mockit.Invocation;
+import mockit.Mock;
+import mockit.MockUp;
+import mockit.Mocked;
+import mockit.StrictExpectations;
+import mockit.Verifications;
 import mockit.integration.junit4.JMockit;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -24,25 +29,15 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.MqttSecurityException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.seedstack.mqtt.MqttConfig;
 import org.seedstack.mqtt.MqttRejectedExecutionHandler;
 import org.seedstack.seed.SeedException;
 
-import com.google.inject.Injector;
-import com.google.inject.Key;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 
-import mockit.Deencapsulation;
-import mockit.Expectations;
-import mockit.Invocation;
-import mockit.Mock;
-import mockit.MockUp;
-import mockit.Mocked;
-import mockit.StrictExpectations;
-import mockit.Verifications;
-
-/**
- * @author thierry.bouvet@mpsa.com
- *
- */
 @RunWith(JMockit.class)
 public class MqttCallbackAdapterTest {
 
@@ -65,25 +60,15 @@ public class MqttCallbackAdapterTest {
     @Mocked
     ThreadPoolExecutor threadPool;
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttCallbackAdapter#connectionLost(java.lang.Throwable)}
-     * .
-     * 
-     * @throws Exception
-     *             if an error occurred
-     */
     @Test
     public void testConnectionLostWithoutReconnection() throws Exception {
-        final MqttClientDefinition clientDefinition = new MqttClientDefinition("uri", "id");
+        final MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig().setReconnectionMode(MqttConfig.ClientConfig.ReconnectionMode.NONE));
         MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
-
-        clientDefinition.setReconnectionMode(MqttReconnectionMode.NONE);
 
         new StrictExpectations() {
             {
                 mqttClient.getClientId();
-                result = clientDefinition.getClientId();
+                result = clientDefinition.getConfig().getClientId();
             }
         };
 
@@ -97,27 +82,17 @@ public class MqttCallbackAdapterTest {
         };
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttCallbackAdapter#connectionLost(java.lang.Throwable)}
-     * .
-     * 
-     * @throws Exception
-     *             if an error occurred
-     */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Test
     public void testConnectionLostWithCustomReconnectionAndNoHandler() throws Exception {
-        final MqttClientDefinition clientDefinition = new MqttClientDefinition("uri", "id");
+        final MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig().setReconnectionMode(MqttConfig.ClientConfig.ReconnectionMode.CUSTOM));
         MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
         Deencapsulation.setField(callbackAdapter, "injector", injector);
-
-        clientDefinition.setReconnectionMode(MqttReconnectionMode.CUSTOM);
 
         new StrictExpectations() {
             {
                 mqttClient.getClientId();
-                result = clientDefinition.getClientId();
+                result = clientDefinition.getConfig().getClientId();
             }
         };
 
@@ -131,29 +106,19 @@ public class MqttCallbackAdapterTest {
         };
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttCallbackAdapter#connectionLost(java.lang.Throwable)}
-     * .
-     * 
-     * @throws Exception
-     *             if an error occurred
-     */
     @Test
     public void testConnectionLostWithCustomReconnection() throws Exception {
-        final MqttClientDefinition clientDefinition = new MqttClientDefinition("uri", "id");
+        final MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig().setReconnectionMode(MqttConfig.ClientConfig.ReconnectionMode.CUSTOM));
         MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
         Deencapsulation.setField(callbackAdapter, "injector", injector);
 
         callbackAdapter.setListenerKey(listenerKey);
         callbackAdapter.setPublisherKey(publisherKey);
 
-        clientDefinition.setReconnectionMode(MqttReconnectionMode.CUSTOM);
-
         new Expectations() {
             {
                 mqttClient.getClientId();
-                result = clientDefinition.getClientId();
+                result = clientDefinition.getConfig().getClientId();
 
                 injector.getInstance(listenerKey);
                 result = listener;
@@ -180,30 +145,22 @@ public class MqttCallbackAdapterTest {
         };
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttCallbackAdapter#connectionLost(java.lang.Throwable)}
-     * .
-     * 
-     * @throws Exception
-     *             if an error occurred
-     */
     @SuppressWarnings("static-access")
     @Test
     public void testConnectionLostWithReconnection(@Mocked final MqttClientUtils mqttClientUtils) throws Exception {
-        final MqttClientDefinition clientDefinition = new MqttClientDefinition("uri", "id");
+        final MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig()
+                .setReconnectionMode(MqttConfig.ClientConfig.ReconnectionMode.ALWAYS)
+                .setReconnectionInterval(1)
+        );
         MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
 
-        clientDefinition.setReconnectionMode(MqttReconnectionMode.ALWAYS);
-        clientDefinition.setReconnectionInterval(1);
-
         final MqttListenerDefinition listenerDefinition = new MqttListenerDefinition(listener.getClass(), "clazz",
-                new String[] { "topic" }, new int[] { 0 });
+                new String[]{"topic"}, new int[]{0});
         clientDefinition.setListenerDefinition(listenerDefinition);
         new Expectations() {
             {
                 mqttClient.getClientId();
-                result = clientDefinition.getClientId();
+                result = clientDefinition.getConfig().getClientId();
 
             }
         };
@@ -235,28 +192,20 @@ public class MqttCallbackAdapterTest {
         timerMock.tearDown();
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttCallbackAdapter#connectionLost(java.lang.Throwable)}
-     * .
-     * 
-     * @throws Exception
-     *             if an error occurred
-     */
     @SuppressWarnings("static-access")
     @Test
     public void testConnectionLostWithReconnectionWithoutListener(@Mocked final MqttClientUtils mqttClientUtils)
             throws Exception {
-        final MqttClientDefinition clientDefinition = new MqttClientDefinition("uri", "id");
+        final MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig()
+                .setReconnectionMode(MqttConfig.ClientConfig.ReconnectionMode.ALWAYS)
+                .setReconnectionInterval(1)
+        );
         MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
-
-        clientDefinition.setReconnectionMode(MqttReconnectionMode.ALWAYS);
-        clientDefinition.setReconnectionInterval(1);
 
         new Expectations() {
             {
                 mqttClient.getClientId();
-                result = clientDefinition.getClientId();
+                result = clientDefinition.getConfig().getClientId();
 
             }
         };
@@ -285,28 +234,20 @@ public class MqttCallbackAdapterTest {
         timerMock.tearDown();
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttCallbackAdapter#connectionLost(java.lang.Throwable)}
-     * .
-     * 
-     * @throws Exception
-     *             if an error occurred
-     */
     @SuppressWarnings("static-access")
     @Test
     public void testConnectionLostWithReconnectionNotPossible(@Mocked final MqttClientUtils mqttClientUtils)
             throws Exception {
-        final MqttClientDefinition clientDefinition = new MqttClientDefinition("uri", "id");
+        final MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig()
+                .setReconnectionMode(MqttConfig.ClientConfig.ReconnectionMode.ALWAYS)
+                .setReconnectionInterval(1)
+        );
         MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
-
-        clientDefinition.setReconnectionMode(MqttReconnectionMode.ALWAYS);
-        clientDefinition.setReconnectionInterval(1);
 
         new Expectations() {
             {
                 mqttClient.getClientId();
-                result = clientDefinition.getClientId();
+                result = clientDefinition.getConfig().getClientId();
 
                 mqttClientUtils.connect(mqttClient, clientDefinition);
                 result = new MqttException(2);
@@ -334,17 +275,9 @@ public class MqttCallbackAdapterTest {
         timerMock.tearDown();
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttCallbackAdapter#messageArrived(java.lang.String, org.eclipse.paho.client.mqttv3.MqttMessage)}
-     * .
-     * 
-     * @throws Exception
-     *             if an error occurred
-     */
     @Test
     public void testMessageArrived() throws Exception {
-        MqttClientDefinition clientDefinition = new MqttClientDefinition("uri", "id");
+        MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig());
         MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
         final MqttMessage mqttMessage = new MqttMessage();
         Deencapsulation.setField(callbackAdapter, "injector", injector);
@@ -366,17 +299,9 @@ public class MqttCallbackAdapterTest {
         };
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttCallbackAdapter#messageArrived(java.lang.String, org.eclipse.paho.client.mqttv3.MqttMessage)}
-     * .
-     * 
-     * @throws Exception
-     *             if an error occurred
-     */
     @Test
     public void testMessageArrivedWithPool() throws Exception {
-        MqttClientDefinition clientDefinition = new MqttClientDefinition("uri", "id");
+        MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig());
         MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
         final MqttMessage mqttMessage = new MqttMessage();
         Deencapsulation.setField(callbackAdapter, "injector", injector);
@@ -400,17 +325,9 @@ public class MqttCallbackAdapterTest {
         };
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttCallbackAdapter#messageArrived(java.lang.String, org.eclipse.paho.client.mqttv3.MqttMessage)}
-     * .
-     * 
-     * @throws Exception
-     *             if an error occurred
-     */
     @Test
     public void testMessageArrivedWithPoolExceptionAndHandler() throws Exception {
-        MqttClientDefinition clientDefinition = new MqttClientDefinition("uri", "id");
+        MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig());
         MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
         final MqttMessage mqttMessage = new MqttMessage();
         Deencapsulation.setField(callbackAdapter, "injector", injector);
@@ -439,17 +356,9 @@ public class MqttCallbackAdapterTest {
         };
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttCallbackAdapter#messageArrived(java.lang.String, org.eclipse.paho.client.mqttv3.MqttMessage)}
-     * .
-     * 
-     * @throws Exception
-     *             if an error occurred
-     */
     @Test(expected = SeedException.class)
     public void testMessageArrivedWithPoolExceptionWithoutHandler() throws Exception {
-        MqttClientDefinition clientDefinition = new MqttClientDefinition("uri", "id");
+        MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig());
         MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
         final MqttMessage mqttMessage = new MqttMessage();
         Deencapsulation.setField(callbackAdapter, "injector", injector);
@@ -467,17 +376,9 @@ public class MqttCallbackAdapterTest {
 
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttCallbackAdapter#deliveryComplete(org.eclipse.paho.client.mqttv3.IMqttDeliveryToken)}
-     * .
-     * 
-     * @throws Exception
-     *             if an error occurred
-     */
     @Test
     public void testDeliveryComplete() throws Exception {
-        MqttClientDefinition clientDefinition = new MqttClientDefinition("uri", "id");
+        MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig());
         MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
         Deencapsulation.setField(callbackAdapter, "injector", injector);
         callbackAdapter.setPublisherKey(publisherKey);
@@ -499,17 +400,9 @@ public class MqttCallbackAdapterTest {
 
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttCallbackAdapter#deliveryComplete(org.eclipse.paho.client.mqttv3.IMqttDeliveryToken)}
-     * .
-     * 
-     * @throws Exception
-     *             if an error occurred
-     */
     @Test
     public void testDeliveryCompleteWithoutPublisher() throws Exception {
-        MqttClientDefinition clientDefinition = new MqttClientDefinition("uri", "id");
+        MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig());
         MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
         Deencapsulation.setField(callbackAdapter, "injector", injector);
 
@@ -525,4 +418,7 @@ public class MqttCallbackAdapterTest {
 
     }
 
+    private MqttConfig.ClientConfig createClientConfig() {
+        return new MqttConfig.ClientConfig().setServerUri("uri").setClientId("id");
+    }
 }

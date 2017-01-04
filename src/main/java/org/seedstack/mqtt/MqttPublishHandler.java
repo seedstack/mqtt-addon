@@ -15,9 +15,6 @@ import java.lang.annotation.*;
 /**
  * Defined a new publish handler for a clients name. This handler is called when
  * a MqttCallback action arrived.
- *
- * @author thierry.bouvet@mpsa.com
- *
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

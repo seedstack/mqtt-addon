@@ -19,9 +19,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * {@link MqttPublishHandler} fixture to test Mqtt communication.
- * 
- * @author thierry.bouvet@mpsa.com
- *
  */
 @MqttPublishHandler(clients = "client1")
 public class MyMqttPublishHandler implements MqttCallback {

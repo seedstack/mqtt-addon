@@ -21,9 +21,6 @@ import java.nio.charset.Charset;
 
 /**
  * {@link @MqttListener} fixture used to test Mqtt communication.
- *
- * @author thierry.bouvet@mpsa.com
- *
  */
 @MqttListener(clients = "client1", topics = { "${test.dest1.name}", "${test.dest2.name}" }, qos = {
         "${test.dest1.qos}", "${test.dest2.qos}" })

@@ -5,52 +5,41 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-/**
- * 
- */
 package org.seedstack.mqtt.internal;
 
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.google.inject.Binder;
+import com.google.inject.name.Names;
+import mockit.Mocked;
+import mockit.Verifications;
 import mockit.integration.junit4.JMockit;
-import org.apache.commons.configuration.Configuration;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.seedstack.mqtt.MqttConfig;
 import org.seedstack.mqtt.MqttRejectedExecutionHandler;
 import org.seedstack.mqtt.internal.fixtures.Listener1;
 import org.seedstack.mqtt.internal.fixtures.PublishHandler;
 
-import com.google.inject.Binder;
-import com.google.inject.name.Names;
+import java.util.concurrent.ConcurrentHashMap;
 
-import mockit.Mocked;
-import mockit.Verifications;
-
-/**
- * @author thierry.bouvet@mpsa.com
- *
- */
 @RunWith(JMockit.class)
 public class MqttModuleTest {
-
     @Mocked
-    IMqttClient mqttClient;
+    private IMqttClient mqttClient;
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttModule#configure()}.
-     */
     @Test
-    public void testConfigure(@Mocked final Binder binder, @Mocked final MqttClientUtils mqttClientUtils) {
-        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
-        ConcurrentHashMap<String, IMqttClient> mqttClients = new ConcurrentHashMap<String, IMqttClient>();
-        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
+    public void testConfigure(@Mocked final Binder binder) {
+        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, IMqttClient> mqttClients = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<>();
         final String uri = "uri";
         final String clientId = "id";
         final String clientName = "name";
-        MqttClientDefinition clientDefinition = new MqttClientDefinition(uri, clientId);
+        MqttClientDefinition clientDefinition = new MqttClientDefinition(new MqttConfig.ClientConfig()
+                .setServerUri(uri)
+                .setClientId(clientId)
+        );
         mqttClientDefinitions.put(clientName, clientDefinition);
         mqttCallbackAdapters.put(clientName, new MqttCallbackAdapter(mqttClient, clientDefinition));
         mqttClients.put(clientName, mqttClient);
@@ -65,33 +54,24 @@ public class MqttModuleTest {
         };
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttModule#configure()}.
-     * 
-     * @throws Exception
-     *             if an error occurred
-     */
     @Test
-    public void testConfigureWithListener(@Mocked final Binder binder, @Mocked final MqttClientUtils mqttClientUtils,
-            @Mocked final Configuration configuration) throws Exception {
-        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
-        ConcurrentHashMap<String, IMqttClient> mqttClients = new ConcurrentHashMap<String, IMqttClient>();
-        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
+    public void testConfigureWithListener(@Mocked final Binder binder) throws Exception {
+        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, IMqttClient> mqttClients = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<>();
 
         final String uri = "uri";
         final String clientId = "id";
         final String clientName = "name";
-        MqttClientDefinition clientDefinition = new MqttClientDefinition(uri, clientId);
+        MqttClientDefinition clientDefinition = new MqttClientDefinition(new MqttConfig.ClientConfig()
+                .setServerUri(uri)
+                .setClientId(clientId)
+        );
         final MqttListenerDefinition listenerDefinition = new MqttListenerDefinition(Listener1.class,
-                Listener1.class.getCanonicalName(), new String[] { "topic" }, new int[] { 0 });
+                Listener1.class.getCanonicalName(), new String[]{"topic"}, new int[]{0});
         clientDefinition.setListenerDefinition(listenerDefinition);
-
-        final MqttPoolDefinition poolDefinition = new MqttPoolDefinition(configuration);
         final String handlerName = "rejectName";
-        poolDefinition.setRejectHandler(MqttRejectedExecutionHandler.class, handlerName);
-        clientDefinition.setPoolDefinition(poolDefinition);
-
+        clientDefinition.getPoolDefinition().setRejectHandler(handlerName, MqttRejectedExecutionHandler.class);
         mqttClientDefinitions.put(clientName, clientDefinition);
 
         mqttCallbackAdapters.put(clientName, new MqttCallbackAdapter(mqttClient, clientDefinition));
@@ -114,24 +94,19 @@ public class MqttModuleTest {
         };
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttModule#configure()}.
-     * 
-     * @throws Exception
-     *             if an error occurred
-     */
     @Test
-    public void testConfigureWithPublisher(@Mocked final Binder binder, @Mocked final MqttClientUtils mqttClientUtils)
-            throws Exception {
-        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
-        ConcurrentHashMap<String, IMqttClient> mqttClients = new ConcurrentHashMap<String, IMqttClient>();
-        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
+    public void testConfigureWithPublisher(@Mocked final Binder binder) throws Exception {
+        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, IMqttClient> mqttClients = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<>();
 
         final String uri = "uri";
         final String clientId = "id";
         final String clientName = "name";
-        MqttClientDefinition clientDefinition = new MqttClientDefinition(uri, clientId);
+        MqttClientDefinition clientDefinition = new MqttClientDefinition(new MqttConfig.ClientConfig()
+                .setServerUri(uri)
+                .setClientId(clientId)
+        );
         final MqttPublisherDefinition publisherDefinition = new MqttPublisherDefinition(PublishHandler.class,
                 PublishHandler.class.getCanonicalName());
         clientDefinition.setPublisherDefinition(publisherDefinition);
@@ -153,5 +128,4 @@ public class MqttModuleTest {
             }
         };
     }
-
 }

@@ -6,36 +6,29 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 /**
- * 
+ *
  */
 package org.seedstack.mqtt.internal;
 
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.google.inject.AbstractModule;
+import com.google.inject.Key;
+import com.google.inject.name.Names;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.seedstack.mqtt.MqttRejectedExecutionHandler;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Key;
-import com.google.inject.name.Names;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Module to initialize {@link MqttClient} and {@link MqttCallback}.
- * 
- * @author thierry.bouvet@mpsa.com
- *
- */
 class MqttModule extends AbstractModule {
+    private final ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions;
+    private final ConcurrentHashMap<String, IMqttClient> mqttClients;
+    private final ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters;
 
-    private ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions;
-    private ConcurrentHashMap<String, IMqttClient> mqttClients;
-    private ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters;
-
-    public MqttModule(ConcurrentHashMap<String, IMqttClient> mqttClients,
-            ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions, ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters) {
+    MqttModule(ConcurrentHashMap<String, IMqttClient> mqttClients,
+               ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions,
+               ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters) {
         this.mqttClientDefinitions = mqttClientDefinitions;
         this.mqttClients = mqttClients;
         this.mqttCallbackAdapters = mqttCallbackAdapters;
@@ -54,26 +47,23 @@ class MqttModule extends AbstractModule {
 
             MqttPublisherDefinition publisherDefinition = clientDefinition.getPublisherDefinition();
             if (publisherDefinition != null) {
-                registerPublisHandler(callbackAdapter, publisherDefinition);
+                registerPublishHandler(callbackAdapter, publisherDefinition);
             }
             MqttListenerDefinition listenerDefinition = clientDefinition.getListenerDefinition();
             if (listenerDefinition != null) {
                 registerListener(callbackAdapter, clientDefinition);
             }
         }
-
     }
 
-    private void registerPublisHandler(MqttCallbackAdapter callbackAdapter,
-            MqttPublisherDefinition publisherDefinition) {
+    private void registerPublishHandler(MqttCallbackAdapter callbackAdapter, MqttPublisherDefinition publisherDefinition) {
         String className = publisherDefinition.getClassName();
         Class<? extends MqttCallback> clazz = publisherDefinition.getPublisherClass();
         bind(MqttCallback.class).annotatedWith(Names.named(className)).to(clazz);
         callbackAdapter.setPublisherKey(Key.get(MqttCallback.class, Names.named(className)));
     }
 
-    private void registerListener(MqttCallbackAdapter callbackAdapter,
-            MqttClientDefinition clientDefinition) {
+    private void registerListener(MqttCallbackAdapter callbackAdapter, MqttClientDefinition clientDefinition) {
         MqttListenerDefinition listenerDefinition = clientDefinition.getListenerDefinition();
         String className = listenerDefinition.getClassName();
         Class<? extends MqttCallback> clazz = listenerDefinition.getListenerClass();
@@ -88,5 +78,4 @@ class MqttModule extends AbstractModule {
             callbackAdapter.setRejectHandlerKey(Key.get(MqttRejectedExecutionHandler.class, Names.named(rejectName)));
         }
     }
-
 }

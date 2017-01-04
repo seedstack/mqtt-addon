@@ -27,12 +27,13 @@ import org.seedstack.seed.it.SeedITRunner;
 
 import javax.inject.Named;
 import java.nio.charset.Charset;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Test publish/subscribe for {@link MqttClient}.
- *
- * @author thierry.bouvet@mpsa.com
  */
 @RunWith(SeedITRunner.class)
 public class MqttIT {
@@ -62,15 +63,11 @@ public class MqttIT {
     public void checkAll() throws Exception {
         Assertions.assertThat(mqttClient).isNotNull();
 
-        FutureTask<String> task = new FutureTask<String>(new Callable<String>() {
-
-            @Override
-            public String call() throws Exception {
-                while (TestMqttListener.messageReceived == null) {
-                    Thread.sleep(50);
-                }
-                return TestMqttListener.messageReceived;
+        FutureTask<String> task = new FutureTask<>(() -> {
+            while (TestMqttListener.messageReceived == null) {
+                Thread.sleep(50);
             }
+            return TestMqttListener.messageReceived;
         });
 
         final String expected = "payload";

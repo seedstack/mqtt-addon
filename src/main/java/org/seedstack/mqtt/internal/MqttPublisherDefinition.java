@@ -6,7 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 /**
- * 
+ *
  */
 package org.seedstack.mqtt.internal;
 
@@ -14,26 +14,21 @@ import org.eclipse.paho.client.mqttv3.MqttCallback;
 
 /**
  * Defined topic listener to create.
- * 
- * @author thierry.bouvet@mpsa.com
- *
  */
 class MqttPublisherDefinition {
+    private final String className;
+    private final Class<? extends MqttCallback> listenerClass;
 
-    private String className;
-    private Class<? extends MqttCallback> listenerClass;
-
-    public MqttPublisherDefinition(Class<? extends MqttCallback> mqttListenerClass, String className) {
+    MqttPublisherDefinition(Class<? extends MqttCallback> mqttListenerClass, String className) {
         this.className = className;
         this.listenerClass = mqttListenerClass;
     }
 
-    public String getClassName() {
+    String getClassName() {
         return className;
     }
 
-    public Class<? extends MqttCallback> getPublisherClass() {
+    Class<? extends MqttCallback> getPublisherClass() {
         return listenerClass;
     }
-
 }

@@ -6,29 +6,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 /**
- * 
+ *
  */
 package org.seedstack.mqtt.internal;
 
-import org.seedstack.seed.ErrorCode;
+import org.seedstack.shed.exception.ErrorCode;
 
-/**
- * {@link ErrorCode} for {@link MqttPlugin}.
- * 
- * @author thierry.bouvet@mpsa.com
- *
- */
-enum MqttErrorCodes implements ErrorCode {
-    MISCONFIGURED_MQTT_CLIENT,
-    CAN_NOT_CREATE_MQTT_CLIENT,
+enum MqttErrorCode implements ErrorCode {
+    CANNOT_CREATE_MQTT_CLIENT,
+    INVALID_QOS,
+    LISTENER_ERROR,
     MQTT_LISTENER_CLIENT_NOT_FOUND,
     MQTT_PUBLISHER_CLIENT_NOT_FOUND,
     MQTT_REJECT_HANDLER_CLIENT_NOT_FOUND,
-    CAN_NOT_CONNECT_MQTT_CLIENT,
-    CAN_NOT_CONNECT_SUBSCRIBE,
-    TOPICS_QOS_NOT_EQUAL,
-    MISCONFIGURED_MQTT_RECONNECTION,
-    LISTENER_ERROR,
-    SUBSCRIBE_FAILED
-
+    SUBSCRIBE_FAILED,
+    TOPICS_QOS_NOT_EQUAL
 }

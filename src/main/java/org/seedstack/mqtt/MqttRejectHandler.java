@@ -17,9 +17,6 @@ import java.util.concurrent.RejectedExecutionHandler;
 
 /**
  * Define a {@link RejectedExecutionHandler} if thread pool queue is full.
- * 
- * @author thierry.bouvet@mpsa.com
- *
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

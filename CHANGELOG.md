@@ -1,3 +1,7 @@
+# Version 2.0.0 (2017-01-04)
+
+* [brk] Update to new configuration system.
+
 # Version 1.2.0 (2016-11-25)
 
 * [new] Mqtt client information accessible through a plugin Facet

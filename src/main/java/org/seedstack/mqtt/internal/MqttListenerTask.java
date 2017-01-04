@@ -6,39 +6,33 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 /**
- * 
+ *
  */
 package org.seedstack.mqtt.internal;
-
-import java.util.concurrent.ThreadPoolExecutor;
 
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.seedstack.seed.SeedException;
 
+import java.util.concurrent.ThreadPoolExecutor;
+
 /**
  * Listener Task running in a {@link ThreadPoolExecutor}. This task is used when
  * a {@link MqttMessage} is arrived.
- * 
- * @author thierry.bouvet@mpsa.com
- *
  */
 class MqttListenerTask implements Runnable {
-    private MqttCallback listener;
-    private String topic;
-    private MqttMessage message;
+    private final MqttCallback listener;
+    private final String topic;
+    private final MqttMessage message;
 
     /**
      * Default constructor
-     * 
-     * @param listener
-     *            real listener to call
-     * @param topic
-     *            topic received
-     * @param message
-     *            {@link MqttMessage} received
+     *
+     * @param listener real listener to call
+     * @param topic    topic received
+     * @param message  {@link MqttMessage} received
      */
-    public MqttListenerTask(MqttCallback listener, String topic, MqttMessage message) {
+    MqttListenerTask(MqttCallback listener, String topic, MqttMessage message) {
         this.listener = listener;
         this.topic = topic;
         this.message = message;
@@ -49,8 +43,8 @@ class MqttListenerTask implements Runnable {
         try {
             listener.messageArrived(topic, message);
         } catch (Exception e) {
-            throw SeedException.wrap(e, MqttErrorCodes.LISTENER_ERROR);
+            throw SeedException.wrap(e, MqttErrorCode.LISTENER_ERROR)
+                    .put("listenerClass", listener.getClass().getName());
         }
     }
-
 }

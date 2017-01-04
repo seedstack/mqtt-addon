@@ -1,0 +1,61 @@
+#
+# Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+
+mqtt:
+  clients:
+    client1:
+      serverUri: tcp://localhost:1883
+      clientId: id1
+      connection:
+        cleanSession: false
+      reconnectionInterval: 5
+      pool:
+        coreSize: 5
+        maxSize: 5
+        queueSize: 10
+        keepAlive: 60
+        rejectedExecutionPolicy: ABORT
+    client2:
+      serverUri: tcp://localhost:1883
+      pool:
+        rejectedPolicy: ABORT
+    clientOK1:
+      serverUri: tcp://localhost:1883
+    client3:
+      serverUri: tcp://localhost:1885
+      clientId: id3
+      connection:
+        cleanSession: false
+      reconnectionInterval: 5
+      pool:
+        coreSize: 5
+        maxSize: 5
+        queueSize: 10
+        keepAlive: 60
+        rejectedExecutionPolicy: ABORT
+    client4:
+      serverUri: tcp://localhost:1886
+      clientId: id4
+      connection:
+        cleanSession: false
+      reconnectionInterval: 5
+      pool:
+        coreSize: 5
+        maxSize: 5
+        queueSize: 10
+        keepAlive: 60
+        rejectedExecutionPolicy: ABORT
+
+test:
+  publisherFilter: client3, client4
+  dest1:
+    name: topic, topic2, topic3
+    qos: 1, 1, 1
+  dest2:
+    name: xxx
+    qos: 1

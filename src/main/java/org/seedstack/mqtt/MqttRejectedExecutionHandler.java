@@ -14,9 +14,6 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 /**
  * Rejected handler called when the thread pool blocking queue is full.
- * 
- * @author thierry.bouvet@mpsa.com
- *
  */
 public interface MqttRejectedExecutionHandler {
 

@@ -5,17 +5,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-/**
- *
- */
 package org.seedstack.mqtt.internal;
 
 import io.nuun.kernel.api.plugin.context.Context;
 import io.nuun.kernel.api.plugin.context.InitContext;
-import io.nuun.kernel.api.plugin.request.ClasspathScanRequest;
-import mockit.*;
+import mockit.Deencapsulation;
+import mockit.Expectations;
+import mockit.Mock;
+import mockit.MockUp;
+import mockit.Mocked;
+import mockit.NonStrictExpectations;
+import mockit.Verifications;
 import mockit.integration.junit4.JMockit;
-import org.apache.commons.configuration.Configuration;
 import org.assertj.core.api.Assertions;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -25,88 +26,80 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.kametic.specifications.Specification;
+import org.seedstack.coffig.Coffig;
+import org.seedstack.mqtt.MqttConfig;
 import org.seedstack.mqtt.internal.fixtures.Listener1;
 import org.seedstack.mqtt.internal.fixtures.ListenerWithError;
 import org.seedstack.mqtt.internal.fixtures.MyRejectHandler;
 import org.seedstack.mqtt.internal.fixtures.PublishHandler;
 import org.seedstack.seed.Application;
 import org.seedstack.seed.SeedException;
-import org.seedstack.seed.core.internal.application.ApplicationPlugin;
+import org.seedstack.seed.spi.ApplicationProvider;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import static org.seedstack.mqtt.internal.RejectedExecutionPolicy.CALLER_RUNS;
 
-/**
- * @author thierry.bouvet@mpsa.com
- */
 @RunWith(JMockit.class)
 public class MqttPluginTest {
-
-    private static final String MQTT_PLUGIN_CONFIGURATION_PREFIX = "org.seedstack.mqtt";
-    private static final String CONNECTION_CLIENTS = "clients";
-    private static final String BROKER_URI = "server-uri";
-    private static final String RECONNECTION_INTERVAL = "interval";
-    private static final String RECONNECTION_MODE = "mode";
-    private static final String POOL_ENABLED = "enabled";
-    private static final String REJECTED_POLICY = "rejected-policy";
-
-
     @Mocked
-    InitContext initContext;
+    private InitContext initContext;
     @Mocked
-    ApplicationPlugin applicationPlugin;
+    private ApplicationProvider applicationProvider;
     @Mocked
-    Application application;
-    @SuppressWarnings("rawtypes")
+    private Application application;
     @Mocked
-    Map<Specification, Collection<Class<?>>> specs;
+    private Map<Specification, Collection<Class<?>>> specs;
+    @Mocked
+    private Coffig coffig;
 
     @Before
     public void setup() {
         new NonStrictExpectations() {
             {
-                initContext.dependency(ApplicationPlugin.class);
-                result = applicationPlugin;
+                initContext.dependency(ApplicationProvider.class);
+                result = applicationProvider;
 
-                applicationPlugin.getApplication();
+                applicationProvider.getApplication();
                 result = application;
 
                 initContext.scannedTypesBySpecification();
                 result = specs;
 
+                specs.get(MqttSpecifications.MQTT_LISTENER_SPEC);
+                result = new ArrayList<Class<?>>();
+
+                specs.get(MqttSpecifications.MQTT_PUBLISHER_SPEC);
+                result = new ArrayList<Class<?>>();
+
+                specs.get(MqttSpecifications.MQTT_REJECT_HANDLER_SPEC);
+                result = new ArrayList<Class<?>>();
             }
         };
     }
 
-    /**
-     * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
-     *
-     * @throws Exception if an error occurred
-     */
     @Test
-    public void testStop(@Mocked final IMqttClient mqttClient, @Mocked final Configuration configuration,
-                         @Mocked final ThreadPoolExecutor executor) throws Exception {
+    public void testStop(@Mocked final IMqttClient mqttClient, @Mocked final ThreadPoolExecutor executor) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
-        ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
+        ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<>();
         clients.put("id", mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
 
-        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
-        MqttClientDefinition clientDefinition = new MqttClientDefinition("xx", "id");
-        MqttPoolDefinition poolDefinition = new MqttPoolDefinition(configuration);
-        Deencapsulation.setField(poolDefinition, "threadPoolExecutor", executor);
-        clientDefinition.setPoolDefinition(poolDefinition);
+        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<>();
+        MqttClientDefinition clientDefinition = new MqttClientDefinition(new MqttConfig.ClientConfig()
+                .setServerUri("xx")
+                .setClientId("id")
+        );
+        Deencapsulation.setField(clientDefinition.getPoolDefinition(), "threadPoolExecutor", executor);
         mqttClientDefinitions.put("xx", clientDefinition);
 
-        clientDefinition = new MqttClientDefinition("xx2", "id2");
-        poolDefinition = new MqttPoolDefinition(configuration);
-        clientDefinition.setPoolDefinition(poolDefinition);
+        clientDefinition = new MqttClientDefinition(new MqttConfig.ClientConfig()
+                .setServerUri("xx2")
+                .setClientId("id2")
+        );
         mqttClientDefinitions.put("xx2", clientDefinition);
 
         Deencapsulation.setField(plugin, "mqttClientDefinitions", mqttClientDefinitions);
@@ -122,15 +115,10 @@ public class MqttPluginTest {
 
     }
 
-    /**
-     * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
-     *
-     * @throws Exception if an error occurred
-     */
     @Test
     public void testStopWithDisconnect(@Mocked final IMqttClient mqttClient) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
-        ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
+        ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<>();
         clients.put("id", mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
 
@@ -149,15 +137,10 @@ public class MqttPluginTest {
 
     }
 
-    /**
-     * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
-     *
-     * @throws Exception if an error occurred
-     */
     @Test
     public void testStopWithException(@Mocked final IMqttClient mqttClient) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
-        ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
+        ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<>();
         clients.put("id", mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
         new Expectations() {
@@ -170,288 +153,42 @@ public class MqttPluginTest {
 
     }
 
-    /**
-     * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#name()}.
-     */
     @Test
     public void testName() {
         MqttPlugin plugin = new MqttPlugin();
         Assertions.assertThat(plugin.name()).isNotEmpty();
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
-     * .
-     */
     @Test(expected = SeedException.class)
-    public void testInitWithoutMqttURI(@Mocked final Configuration configuration) {
-        final String[] clients = {"client"};
-        MqttPlugin plugin = new MqttPlugin();
-        new Expectations() {
-            {
-                application.getConfiguration();
-                result = configuration;
-
-                configuration.subset(anyString);
-                result = configuration;
-
-                configuration.getStringArray(CONNECTION_CLIENTS);
-                result = clients;
-            }
-        };
-
-        plugin.init(initContext);
-
-    }
-
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
-     * .
-     */
-    @Test(expected = SeedException.class)
-    public void testInitWithListenerWithoutClient(@Mocked final Configuration configuration) {
-        final Collection<Class<?>> classes = new ArrayList<Class<?>>();
+    public void testInitWithListenerWithoutClient() {
+        final Collection<Class<?>> classes = new ArrayList<>();
         classes.add(Listener1.class);
         MqttPlugin plugin = new MqttPlugin();
         new Expectations() {
             {
-                application.getConfiguration();
-                result = configuration;
-
-                application.substituteWithConfiguration(anyString);
-                result = null;
-
-                configuration.subset(anyString);
-                result = configuration;
-
-                specs.get(any);
+                specs.get(MqttSpecifications.MQTT_LISTENER_SPEC);
                 result = classes;
-
             }
         };
 
         plugin.init(initContext);
-
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
-     * .
-     */
     @Test(expected = SeedException.class)
-    public void testInitWithReconnectionModeError(@Mocked final Configuration configuration) {
-        final String[] clients = {"clientOK1"};
-        MqttPlugin plugin = new MqttPlugin();
-        new Expectations() {
-            {
-                application.getConfiguration();
-                result = configuration;
-
-                configuration.subset(anyString);
-                result = configuration;
-
-                configuration.getStringArray(CONNECTION_CLIENTS);
-                result = clients;
-
-                configuration.getString(anyString);
-                result = "xx";
-            }
-        };
-
-        plugin.init(initContext);
-
-    }
-
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
-     * .
-     */
-    @Test
-    public void testInitWithoutReconnectionConfiguration(@Mocked final Configuration configuration) {
-        final String clientName = "clientOK1";
-        final String[] clients = {clientName};
-        final Collection<Class<?>> classes = new ArrayList<Class<?>>();
-        MqttPlugin plugin = new MqttPlugin();
-        final String defaultConfigString = "xx";
-        new Expectations() {
-            {
-                application.getConfiguration();
-                result = configuration;
-
-                configuration.subset(MQTT_PLUGIN_CONFIGURATION_PREFIX);
-                result = configuration;
-
-                configuration.isEmpty();
-                result = true;
-
-                configuration.getStringArray(CONNECTION_CLIENTS);
-                result = clients;
-
-                configuration.getString(anyString);
-                result = defaultConfigString;
-
-                specs.get(any);
-                result = classes;
-
-            }
-        };
-
-        new MockUp<MqttClient>() {
-            @Mock
-            public void $init(String serverURI, String clientId) {
-            }
-
-        };
-
-        plugin.init(initContext);
-
-        MqttClientDefinition def = new MqttClientDefinition(defaultConfigString, defaultConfigString);
-        ConcurrentHashMap<String, MqttClientDefinition> defs = Deencapsulation.getField(plugin,
-                "mqttClientDefinitions");
-        Assertions.assertThat(defs).isNotEmpty();
-        MqttClientDefinition clientDef = defs.get(clientName);
-        Assertions.assertThat(clientDef.getReconnectionInterval()).isEqualTo(def.getReconnectionInterval());
-        Assertions.assertThat(clientDef.getReconnectionMode()).isEqualTo(def.getReconnectionMode());
-    }
-
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
-     * .
-     */
-    @Test
-    public void testInitWithDefaultReconnection(@Mocked final Configuration configuration) {
-        final String clientName = "clientOK1";
-        final String[] clients = {clientName};
-        final Collection<Class<?>> classes = new ArrayList<Class<?>>();
-        MqttPlugin plugin = new MqttPlugin();
-        final String defaultConfigString = "xx";
-        new Expectations() {
-            {
-                application.getConfiguration();
-                result = configuration;
-
-                configuration.subset(MQTT_PLUGIN_CONFIGURATION_PREFIX);
-                result = configuration;
-
-                configuration.getStringArray(CONNECTION_CLIENTS);
-                result = clients;
-
-                configuration.getString(BROKER_URI);
-                result = defaultConfigString;
-
-                specs.get(any);
-                result = classes;
-
-            }
-        };
-
-        new MockUp<MqttClient>() {
-            @Mock
-            public void $init(String serverURI, String clientId) throws MqttException {
-            }
-
-        };
-
-        plugin.init(initContext);
-
-        MqttClientDefinition def = new MqttClientDefinition(defaultConfigString, defaultConfigString);
-        ConcurrentHashMap<String, MqttClientDefinition> defs = Deencapsulation.getField(plugin,
-                "mqttClientDefinitions");
-        Assertions.assertThat(defs).isNotEmpty();
-        MqttClientDefinition clientDef = defs.get(clientName);
-        Assertions.assertThat(clientDef.getReconnectionInterval()).isEqualTo(def.getReconnectionInterval());
-        Assertions.assertThat(clientDef.getReconnectionMode()).isEqualTo(def.getReconnectionMode());
-    }
-
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
-     * .
-     */
-    @Test
-    public void testInitWithCustomClient(@Mocked final Configuration configuration) {
-        final String clientName = "clientOK1";
-        final String defaultString = "xx";
-        final String[] clients = {clientName};
-        final Collection<Class<?>> classes = new ArrayList<Class<?>>();
-        MqttPlugin plugin = new MqttPlugin();
-        new Expectations() {
-            {
-                application.getConfiguration();
-                result = configuration;
-
-                configuration.subset(anyString);
-                result = configuration;
-
-                configuration.getStringArray(CONNECTION_CLIENTS);
-                result = clients;
-
-                configuration.getString(BROKER_URI);
-                result = defaultString;
-                configuration.getString(RECONNECTION_MODE);
-                result = "NONE";
-                configuration.getString(RECONNECTION_INTERVAL);
-                result = "12";
-
-                specs.get(any);
-                result = classes;
-
-            }
-        };
-
-        new MockUp<MqttClient>() {
-            @Mock
-            public void $init(String serverURI, String clientId) throws MqttException {
-            }
-
-        };
-
-        plugin.init(initContext);
-
-        ConcurrentHashMap<String, MqttClientDefinition> defs = Deencapsulation.getField(plugin,
-                "mqttClientDefinitions");
-        Assertions.assertThat(defs).isNotEmpty();
-        MqttClientDefinition clientDef = defs.get(clientName);
-        Assertions.assertThat(clientDef.getReconnectionInterval()).isEqualTo(12);
-        Assertions.assertThat(clientDef.getReconnectionMode()).isEqualTo(MqttReconnectionMode.NONE);
-
-    }
-
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
-     * .
-     */
-    @Test(expected = SeedException.class)
-    public void testInitWithListenerMisconfigured(@Mocked final Configuration configuration) {
+    public void testInitWithListenerMisconfigured() {
         final String clientName = "client1";
-        final String[] clients = {"clientOK1"};
-        final Collection<Class<?>> classes = new ArrayList<Class<?>>();
+        final Collection<Class<?>> classes = new ArrayList<>();
         classes.add(ListenerWithError.class);
         MqttPlugin plugin = new MqttPlugin();
         new Expectations() {
             {
-                application.getConfiguration();
-                result = configuration;
+                coffig.get(MqttConfig.class);
+                result = new MqttConfig();
 
                 application.substituteWithConfiguration(clientName);
                 result = clientName;
 
-                configuration.subset(anyString);
-                result = configuration;
-
-                configuration.getStringArray(CONNECTION_CLIENTS);
-                result = clients;
-
-                configuration.getString(BROKER_URI);
-                result = "xx";
-
-                specs.get(any);
+                specs.get(MqttSpecifications.MQTT_LISTENER_SPEC);
                 result = classes;
 
             }
@@ -461,36 +198,25 @@ public class MqttPluginTest {
 
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
-     * .
-     */
     @Test
-    public void testInitWithListener(@Mocked final Configuration configuration) {
+    public void testInitWithListener() {
         final String clientName = "clientOK1";
         final String[] clients = {clientName};
-        final Collection<Class<?>> classes = new ArrayList<Class<?>>();
+        final Collection<Class<?>> classes = new ArrayList<>();
         classes.add(Listener1.class);
         MqttPlugin plugin = new MqttPlugin();
         new Expectations() {
             {
-                application.getConfiguration();
-                result = configuration;
+                coffig.get(MqttConfig.class);
+                result = new MqttConfig().addClient("clientOK1", new MqttConfig.ClientConfig()
+                        .setServerUri("tcp://dummy")
+                        .setClientId("id")
+                );
 
                 application.substituteWithConfiguration(clientName);
                 result = clientName;
 
-                configuration.subset(anyString);
-                result = configuration;
-
-                configuration.getStringArray(CONNECTION_CLIENTS);
-                result = clients;
-
-                configuration.getString(BROKER_URI);
-                result = "xx";
-
-                specs.get(any);
+                specs.get(MqttSpecifications.MQTT_LISTENER_SPEC);
                 result = classes;
                 result = new ArrayList<Class<?>>();
 
@@ -516,29 +242,22 @@ public class MqttPluginTest {
         Assertions.assertThat(clientDef.getListenerDefinition().getListenerClass()).isEqualTo(Listener1.class);
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
-     * .
-     */
     @Test(expected = SeedException.class)
-    public void testInitWithPublisherPb(@Mocked final Configuration configuration) {
-        final Collection<Class<?>> listenerClasses = new ArrayList<Class<?>>();
-        final Collection<Class<?>> classes = new ArrayList<Class<?>>();
-        classes.add(PublishHandler.class);
+    public void testInitWithPublisherPb() {
+        final Collection<Class<?>> listenerClasses = new ArrayList<>();
+        final Collection<Class<?>> publishHandlerClasses = new ArrayList<>();
+        publishHandlerClasses.add(PublishHandler.class);
         MqttPlugin plugin = new MqttPlugin();
         new Expectations() {
             {
-                application.getConfiguration();
-                result = configuration;
+                coffig.get(MqttConfig.class);
+                result = new MqttConfig();
 
-                configuration.subset(anyString);
-                result = configuration;
-
-                specs.get(any);
+                specs.get(MqttSpecifications.MQTT_LISTENER_SPEC);
                 result = listenerClasses;
-                result = classes;
 
+                specs.get(MqttSpecifications.MQTT_PUBLISHER_SPEC);
+                result = publishHandlerClasses;
             }
         };
 
@@ -546,42 +265,33 @@ public class MqttPluginTest {
 
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
-     * .
-     */
     @Test
-    public void testInitWithPublisher(@Mocked final Configuration configuration) {
+    public void testInitWithPublisher() {
         final String clientName = "clientOK1";
-        final String[] clients = {clientName};
-        final Collection<Class<?>> listenerClasses = new ArrayList<Class<?>>();
-        final Collection<Class<?>> rejectedHandlers = new ArrayList<Class<?>>();
-        final Collection<Class<?>> classes = new ArrayList<Class<?>>();
-        classes.add(PublishHandler.class);
+        final Collection<Class<?>> listenerClasses = new ArrayList<>();
+        final Collection<Class<?>> rejectedHandlers = new ArrayList<>();
+        final Collection<Class<?>> publishHandlerClasses = new ArrayList<>();
+        publishHandlerClasses.add(PublishHandler.class);
         MqttPlugin plugin = new MqttPlugin();
         new Expectations() {
             {
-                application.getConfiguration();
-                result = configuration;
-
-                configuration.subset(anyString);
-                result = configuration;
+                coffig.get(MqttConfig.class);
+                result = new MqttConfig().addClient("clientOK1", new MqttConfig.ClientConfig()
+                        .setServerUri("tcp://dummy")
+                        .setClientId("id")
+                );
 
                 application.substituteWithConfiguration(clientName);
                 result = clientName;
 
-                configuration.getStringArray(CONNECTION_CLIENTS);
-                result = clients;
-
-                configuration.getString(BROKER_URI);
-                result = "xx";
-
-                specs.get(any);
+                specs.get(MqttSpecifications.MQTT_LISTENER_SPEC);
                 result = listenerClasses;
-                result = classes;
-                result = rejectedHandlers;
 
+                specs.get(MqttSpecifications.MQTT_PUBLISHER_SPEC);
+                result = publishHandlerClasses;
+
+                specs.get(MqttSpecifications.MQTT_REJECT_HANDLER_SPEC);
+                result = rejectedHandlers;
             }
         };
 
@@ -594,52 +304,37 @@ public class MqttPluginTest {
 
         plugin.init(initContext);
 
-        ConcurrentHashMap<String, MqttClientDefinition> defs = Deencapsulation.getField(plugin,
-                "mqttClientDefinitions");
+        ConcurrentHashMap<String, MqttClientDefinition> defs = Deencapsulation.getField(plugin, "mqttClientDefinitions");
         Assertions.assertThat(defs).isNotEmpty();
         MqttClientDefinition clientDef = defs.get("clientOK1");
         Assertions.assertThat(clientDef.getPublisherDefinition()).isNotNull();
         Assertions.assertThat(clientDef.getPublisherDefinition().getPublisherClass()).isEqualTo(PublishHandler.class);
-
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
-     * .
-     */
     @Test(expected = SeedException.class)
-    public void testInitWithPublisherAndNoClient(@Mocked final Configuration configuration) {
+    public void testInitWithPublisherAndNoClient() {
         final String clientName = "clientOK1";
         final String clientName2 = "clientNOK";
-        final String[] clients = {clientName};
-        final Collection<Class<?>> listenerClasses = new ArrayList<Class<?>>();
-        final Collection<Class<?>> rejectedHandlers = new ArrayList<Class<?>>();
-        final Collection<Class<?>> classes = new ArrayList<Class<?>>();
-        classes.add(PublishHandler.class);
+        final Collection<Class<?>> listenerClasses = new ArrayList<>();
+        final Collection<Class<?>> publishHandlerClasses = new ArrayList<>();
+        publishHandlerClasses.add(PublishHandler.class);
         MqttPlugin plugin = new MqttPlugin();
         new Expectations() {
             {
-                application.getConfiguration();
-                result = configuration;
-
-                configuration.subset(anyString);
-                result = configuration;
+                coffig.get(MqttConfig.class);
+                result = new MqttConfig().addClient("clientOK1", new MqttConfig.ClientConfig()
+                        .setServerUri("tcp://dummy")
+                        .setClientId("id")
+                );
 
                 application.substituteWithConfiguration(clientName);
                 result = clientName2;
 
-                configuration.getStringArray(CONNECTION_CLIENTS);
-                result = clients;
-
-                configuration.getString(BROKER_URI);
-                result = "xx";
-
-                specs.get(any);
+                specs.get(MqttSpecifications.MQTT_LISTENER_SPEC);
                 result = listenerClasses;
-                result = classes;
-                result = rejectedHandlers;
 
+                specs.get(MqttSpecifications.MQTT_PUBLISHER_SPEC);
+                result = publishHandlerClasses;
             }
         };
 
@@ -661,34 +356,20 @@ public class MqttPluginTest {
 
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
-     * .
-     *
-     * @throws Exception if an error occurred
-     */
     @Test(expected = SeedException.class)
-    public void testRegisterPb(@Mocked final Configuration configuration) throws Exception {
-        final String[] clients = {"clientOK1"};
-        final Collection<Class<?>> classes = new ArrayList<Class<?>>();
-        MqttPlugin plugin = new MqttPlugin();
+    public void testRegisterPb() throws Exception {
+        final String serverURI = "tcp://dummy";
+        final String clientId = "id";
         new Expectations() {
             {
-                application.getConfiguration();
-                result = configuration;
+                coffig.get(MqttConfig.class);
+                result = new MqttConfig().addClient("clientOK1", new MqttConfig.ClientConfig()
+                        .setServerUri(serverURI)
+                        .setClientId(clientId)
+                );
 
-                configuration.subset(anyString);
-                result = configuration;
-
-                configuration.getStringArray(CONNECTION_CLIENTS);
-                result = clients;
-
-                configuration.getString(BROKER_URI);
-                result = "xx";
-
-                specs.get(any);
-                result = classes;
+                specs.get(MqttSpecifications.MQTT_LISTENER_SPEC);
+                result = new ArrayList<>();
 
             }
         };
@@ -700,284 +381,67 @@ public class MqttPluginTest {
             }
 
         };
+
+        MqttPlugin plugin = new MqttPlugin();
         plugin.init(initContext);
 
         new Verifications() {
             {
-                new MqttClient(anyString, anyString);
+                new MqttClient(serverURI, clientId);
             }
         };
     }
 
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#requiredPlugins()}.
-     */
-    @Test
-    public void testRequiredPlugins() {
-        MqttPlugin plugin = new MqttPlugin();
-        Collection<Class<?>> required = plugin.requiredPlugins();
-        Assertions.assertThat(required).isNotEmpty();
-        Assertions.assertThat(required).contains(ApplicationPlugin.class);
-    }
-
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#nativeUnitModule()}.
-     */
-    @Test
-    public void testNativeUnitModule() {
-        MockUp<MqttModule> module = new MockUp<MqttModule>() {
-            @Mock
-            public void $init(ConcurrentHashMap<String, IMqttClient> mqttClients,
-                              ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions,
-                              ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters) {
-            }
-
-        };
-        MqttPlugin plugin = new MqttPlugin();
-        Assertions.assertThat(plugin.nativeUnitModule()).isEqualTo(module.getMockInstance());
-    }
-
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#classpathScanRequests()}.
-     */
-    @Test
-    public void testClasspathScanRequests() {
-        MqttPlugin plugin = new MqttPlugin();
-        Collection<ClasspathScanRequest> scans = plugin.classpathScanRequests();
-        Assertions.assertThat(scans).isNotEmpty();
-    }
-
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
-     * .
-     */
-    @Test
-    public void testInitWithRejectHandler(@Mocked final Configuration configuration) {
-        final String clientName = "clientOK1";
-        final String[] clients = {clientName};
-        final Collection<Class<?>> classes = new ArrayList<Class<?>>();
-        classes.add(MyRejectHandler.class);
-        final Collection<Class<?>> listenerClasses = new ArrayList<Class<?>>();
-        final Collection<Class<?>> publisherClasses = new ArrayList<Class<?>>();
-        MqttPlugin plugin = new MqttPlugin();
-        new Expectations() {
-            {
-                application.getConfiguration();
-                result = configuration;
-
-                configuration.subset(anyString);
-                result = configuration;
-
-                configuration.getStringArray(CONNECTION_CLIENTS);
-                result = clients;
-
-                application.substituteWithConfiguration(clientName);
-                result = clientName;
-
-                configuration.getString(BROKER_URI);
-                result = "xx";
-
-                specs.get(any);
-                result = listenerClasses;
-                result = publisherClasses;
-                result = classes;
-
-            }
-        };
-
-        new MockUp<MqttClient>() {
-            @Mock
-            public void $init(String serverURI, String clientId) throws MqttException {
-            }
-
-        };
-
-        plugin.init(initContext);
-
-        ConcurrentHashMap<String, MqttClientDefinition> defs = Deencapsulation.getField(plugin,
-                "mqttClientDefinitions");
-        Assertions.assertThat(defs).isNotEmpty();
-        MqttClientDefinition clientDef = defs.get(clientName);
-        Assertions.assertThat(clientDef.getPoolDefinition()).isNotNull();
-        Assertions.assertThat(clientDef.getPoolDefinition().getRejectHandlerClass()).isEqualTo(MyRejectHandler.class);
-    }
-
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
-     * .
-     */
     @Test(expected = SeedException.class)
-    public void testInitWithRejectHandlerAndNoClient(@Mocked final Configuration configuration) {
-        final String clientName = "clientOK1";
-        final String clientName2 = "clientNOK";
-        final String[] clients = {clientName};
-        final Collection<Class<?>> classes = new ArrayList<Class<?>>();
-        classes.add(MyRejectHandler.class);
-        final Collection<Class<?>> listenerClasses = new ArrayList<Class<?>>();
-        final Collection<Class<?>> publisherClasses = new ArrayList<Class<?>>();
+    public void testInitWithHandlerWithoutClient() {
+        final Collection<Class<?>> rejectHandlerClasses = new ArrayList<>();
+        rejectHandlerClasses.add(MyRejectHandler.class);
+        final Collection<Class<?>> listenerClasses = new ArrayList<>();
+        final Collection<Class<?>> publishHandlerClasses = new ArrayList<>();
         MqttPlugin plugin = new MqttPlugin();
         new Expectations() {
             {
-                application.getConfiguration();
-                result = configuration;
+                coffig.get(MqttConfig.class);
+                result = new MqttConfig();
 
-                configuration.subset(anyString);
-                result = configuration;
-
-                configuration.getStringArray(CONNECTION_CLIENTS);
-                result = clients;
-
-                application.substituteWithConfiguration(clientName);
-                result = clientName2;
-
-                configuration.getString(BROKER_URI);
-                result = "xx";
-
-                specs.get(any);
+                specs.get(MqttSpecifications.MQTT_LISTENER_SPEC);
                 result = listenerClasses;
-                result = publisherClasses;
-                result = classes;
 
-            }
-        };
+                specs.get(MqttSpecifications.MQTT_PUBLISHER_SPEC);
+                result = publishHandlerClasses;
 
-        new MockUp<MqttClient>() {
-            @Mock
-            public void $init(String serverURI, String clientId) throws MqttException {
-            }
-
-        };
-
-        plugin.init(initContext);
-
-        ConcurrentHashMap<String, MqttClientDefinition> defs = Deencapsulation.getField(plugin,
-                "mqttClientDefinitions");
-        Assertions.assertThat(defs).isNotEmpty();
-        MqttClientDefinition clientDef = defs.get(clientName);
-        Assertions.assertThat(clientDef.getPoolDefinition()).isNotNull();
-        Assertions.assertThat(clientDef.getPoolDefinition().getRejectHandlerClass()).isEqualTo(MyRejectHandler.class);
-    }
-
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
-     * .
-     */
-    @Test
-    public void testInitWithPoolConfiguration(@Mocked final Configuration configuration, @SuppressWarnings("rawtypes") @Mocked final ArrayBlockingQueue queue, @Mocked final ThreadPoolExecutor threadPoolExecutor) {
-        final String clientName = "clientOK1";
-        final String[] clients = {clientName};
-        final Collection<Class<?>> classes = new ArrayList<Class<?>>();
-        MqttPlugin plugin = new MqttPlugin();
-        new Expectations() {
-            {
-                application.getConfiguration();
-                result = configuration;
-
-                configuration.subset(anyString);
-                result = configuration;
-
-                configuration.getStringArray(CONNECTION_CLIENTS);
-                result = clients;
-
-                configuration.getString(REJECTED_POLICY, CALLER_RUNS.name());
-                result = CALLER_RUNS.name();
-
-                configuration.getString(BROKER_URI);
-                result = "xx";
-
-                configuration.getBoolean(POOL_ENABLED, Boolean.FALSE);
-                result = Boolean.TRUE;
-
-                specs.get(any);
-                result = classes;
-
-            }
-        };
-
-        new MockUp<MqttClient>() {
-            @Mock
-            public void $init(String serverURI, String clientId) throws MqttException {
-            }
-
-        };
-
-        plugin.init(initContext);
-
-        ConcurrentHashMap<String, MqttClientDefinition> defs = Deencapsulation.getField(plugin,
-                "mqttClientDefinitions");
-        Assertions.assertThat(defs).isNotEmpty();
-        MqttClientDefinition clientDef = defs.get(clientName);
-        Assertions.assertThat(clientDef.getPoolDefinition()).isNotNull();
-        Assertions.assertThat(clientDef.getPoolDefinition().getThreadPoolExecutor()).isNotNull();
-    }
-
-    /**
-     * Test method for
-     * {@link org.seedstack.mqtt.internal.MqttPlugin#init(io.nuun.kernel.api.plugin.context.InitContext)}
-     * .
-     */
-    @Test(expected = SeedException.class)
-    public void testInitWithHandlerWithoutClient(@Mocked final Configuration configuration) {
-        final Collection<Class<?>> classes = new ArrayList<Class<?>>();
-        classes.add(MyRejectHandler.class);
-        final Collection<Class<?>> listenerClasses = new ArrayList<Class<?>>();
-        final Collection<Class<?>> publisherClasses = new ArrayList<Class<?>>();
-        MqttPlugin plugin = new MqttPlugin();
-        new Expectations() {
-            {
-                application.getConfiguration();
-                result = configuration;
-
-                configuration.subset(anyString);
-                result = configuration;
-
-                specs.get(any);
-                result = listenerClasses;
-                result = publisherClasses;
-                result = classes;
-
+                specs.get(MqttSpecifications.MQTT_REJECT_HANDLER_SPEC);
+                result = rejectHandlerClasses;
             }
         };
 
         plugin.init(initContext);
-
     }
 
-    /**
-     * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
-     *
-     * @throws Exception
-     *             if an error occurred
-     */
     @SuppressWarnings("static-access")
     @Test
-    public void testStart(@Mocked final IMqttClient mqttClient, @Mocked final Configuration configuration,
-            @Mocked final Context context, @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
+    public void testStart(@Mocked final IMqttClient mqttClient, @Mocked final Context context, @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
 
-        ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
-        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
+        ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<>();
 
         final String client1 = "clients";
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
 
-        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
+        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<>();
 
         // clients 1 with listener
-        final MqttClientDefinition clientDefinition = new MqttClientDefinition("xx", "id");
+        final MqttClientDefinition clientDefinition = new MqttClientDefinition(new MqttConfig.ClientConfig()
+                .setServerUri("tcp://dummy")
+                .setClientId("id")
+        );
         final MqttListenerDefinition listenerDefinition = new MqttListenerDefinition(Listener1.class,
-                Listener1.class.getCanonicalName(), new String[] { "topic" }, new int[] { 0 });
+                Listener1.class.getCanonicalName(), new String[]{"topic"}, new int[]{0});
         clientDefinition.setListenerDefinition(listenerDefinition);
         mqttClientDefinitions.put(client1, clientDefinition);
         mqttCallbackAdapters.put(client1, new MqttCallbackAdapter(mqttClient, clientDefinition));
-        MqttModule module = new MqttModule(clients, mqttClientDefinitions, mqttCallbackAdapters);
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttCallbackAdapters", mqttCallbackAdapters);
         Deencapsulation.setField(plugin, "mqttClientDefinitions", mqttClientDefinitions);
@@ -988,40 +452,34 @@ public class MqttPluginTest {
         new Verifications() {
             {
                 mqttClientUtils.connect(mqttClient, clientDefinition);
-
                 mqttClientUtils.subscribe(mqttClient, listenerDefinition);
             }
 
         };
-
     }
 
-    /**
-     * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
-     *
-     * @throws Exception
-     *             if an error occurred
-     */
     @SuppressWarnings("static-access")
     @Test
     public void testStartWithoutListener(@Mocked final IMqttClient mqttClient,
-            @Mocked final Configuration configuration, @Mocked final Context context,
-            @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
+                                         @Mocked final Context context,
+                                         @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
 
-        ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
-        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
+        ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<>();
 
         final String client1 = "clients";
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
 
-        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
+        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<>();
 
-        final MqttClientDefinition clientDefinition = new MqttClientDefinition("xx", "id");
+        final MqttClientDefinition clientDefinition = new MqttClientDefinition(new MqttConfig.ClientConfig()
+                .setServerUri("tcp://dummy")
+                .setClientId("id")
+        );
         mqttClientDefinitions.put(client1, clientDefinition);
         mqttCallbackAdapters.put(client1, new MqttCallbackAdapter(mqttClient, clientDefinition));
-        MqttModule module = new MqttModule(clients, mqttClientDefinitions, mqttCallbackAdapters);
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttCallbackAdapters", mqttCallbackAdapters);
         Deencapsulation.setField(plugin, "mqttClientDefinitions", mqttClientDefinitions);
@@ -1031,39 +489,32 @@ public class MqttPluginTest {
         new Verifications() {
             {
                 mqttClientUtils.connect(mqttClient, clientDefinition);
-
             }
-
         };
-
     }
 
-    /**
-     * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
-     *
-     * @throws Exception
-     *             if an error occurred
-     */
     @SuppressWarnings("static-access")
     @Test
     public void testStartConnectWithSecurityException(@Mocked final IMqttClient mqttClient,
-            @Mocked final Configuration configuration, @Mocked final Context context,
-            @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
+                                                      @Mocked final Context context,
+                                                      @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
 
-        ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
-        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
+        ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<>();
 
         final String client1 = "clients";
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
 
-        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
+        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<>();
 
-        final MqttClientDefinition clientDefinition = new MqttClientDefinition("xx", "id");
+        final MqttClientDefinition clientDefinition = new MqttClientDefinition(new MqttConfig.ClientConfig()
+                .setServerUri("tcp://dummy")
+                .setClientId("id")
+        );
         mqttClientDefinitions.put(client1, clientDefinition);
         mqttCallbackAdapters.put(client1, new MqttCallbackAdapter(mqttClient, clientDefinition));
-        MqttModule module = new MqttModule(clients, mqttClientDefinitions, mqttCallbackAdapters);
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttCallbackAdapters", mqttCallbackAdapters);
         Deencapsulation.setField(plugin, "mqttClientDefinitions", mqttClientDefinitions);
@@ -1074,36 +525,32 @@ public class MqttPluginTest {
                 result = new MqttSecurityException(MqttException.REASON_CODE_BROKER_UNAVAILABLE);
             }
         };
-        plugin.start(context);
 
+        plugin.start(context);
     }
 
-    /**
-     * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
-     *
-     * @throws Exception
-     *             if an error occurred
-     */
     @SuppressWarnings("static-access")
     @Test
     public void testStartConnectWithException(@Mocked final IMqttClient mqttClient,
-            @Mocked final Configuration configuration, @Mocked final Context context,
-            @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
+                                              @Mocked final Context context,
+                                              @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
 
-        ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
-        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
+        ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<>();
 
         final String client1 = "clients";
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
 
-        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
+        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<>();
 
-        final MqttClientDefinition clientDefinition = new MqttClientDefinition("xx", "id");
+        final MqttClientDefinition clientDefinition = new MqttClientDefinition(new MqttConfig.ClientConfig()
+                .setServerUri("tcp://dummy")
+                .setClientId("id")
+        );
         mqttClientDefinitions.put(client1, clientDefinition);
         mqttCallbackAdapters.put(client1, new MqttCallbackAdapter(mqttClient, clientDefinition));
-        MqttModule module = new MqttModule(clients, mqttClientDefinitions, mqttCallbackAdapters);
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttCallbackAdapters", mqttCallbackAdapters);
         Deencapsulation.setField(plugin, "mqttClientDefinitions", mqttClientDefinitions);
@@ -1114,40 +561,36 @@ public class MqttPluginTest {
                 result = new MqttException(MqttException.REASON_CODE_BROKER_UNAVAILABLE);
             }
         };
-        plugin.start(context);
 
+        plugin.start(context);
     }
 
-    /**
-     * Test method for {@link org.seedstack.mqtt.internal.MqttPlugin#stop()}.
-     *
-     * @throws Exception
-     *             if an error occurred
-     */
     @SuppressWarnings("static-access")
     @Test
     public void testStartWithListenerException(@Mocked final IMqttClient mqttClient,
-            @Mocked final Configuration configuration, @Mocked final Context context,
-            @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
+                                               @Mocked final Context context,
+                                               @Mocked final MqttClientUtils mqttClientUtils) throws Exception {
         MqttPlugin plugin = new MqttPlugin();
 
-        ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<String, IMqttClient>();
-        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<String, MqttCallbackAdapter>();
+        ConcurrentHashMap<String, IMqttClient> clients = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, MqttCallbackAdapter> mqttCallbackAdapters = new ConcurrentHashMap<>();
 
         final String client1 = "clients";
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttClients", clients);
 
-        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<String, MqttClientDefinition>();
+        ConcurrentHashMap<String, MqttClientDefinition> mqttClientDefinitions = new ConcurrentHashMap<>();
 
         // clients 1 with listener
-        final MqttClientDefinition clientDefinition = new MqttClientDefinition("xx", "id");
+        final MqttClientDefinition clientDefinition = new MqttClientDefinition(new MqttConfig.ClientConfig()
+                .setServerUri("tcp://dummy")
+                .setClientId("id")
+        );
         final MqttListenerDefinition listenerDefinition = new MqttListenerDefinition(Listener1.class,
-                Listener1.class.getCanonicalName(), new String[] { "topic" }, new int[] { 0 });
+                Listener1.class.getCanonicalName(), new String[]{"topic"}, new int[]{0});
         clientDefinition.setListenerDefinition(listenerDefinition);
         mqttClientDefinitions.put(client1, clientDefinition);
         mqttCallbackAdapters.put(client1, new MqttCallbackAdapter(mqttClient, clientDefinition));
-        MqttModule module = new MqttModule(clients, mqttClientDefinitions, mqttCallbackAdapters);
         clients.put(client1, mqttClient);
         Deencapsulation.setField(plugin, "mqttCallbackAdapters", mqttCallbackAdapters);
         Deencapsulation.setField(plugin, "mqttClientDefinitions", mqttClientDefinitions);
@@ -1164,11 +607,7 @@ public class MqttPluginTest {
         new Verifications() {
             {
                 mqttClientUtils.connect(mqttClient, clientDefinition);
-
             }
-
         };
-
     }
-
 }

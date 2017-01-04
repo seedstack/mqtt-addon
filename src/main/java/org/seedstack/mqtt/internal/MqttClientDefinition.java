@@ -6,100 +6,44 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 /**
- * 
+ *
  */
 package org.seedstack.mqtt.internal;
 
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.seedstack.mqtt.MqttConfig;
 
-/**
- * Defined all MQTT configuration: {@link MqttConnectOptions},
- * {@link MqttListenerDefinition}. This definition is used to create
- * {@link MqttClient}.
- * 
- * @author thierry.bouvet@mpsa.com
- *
- */
 class MqttClientDefinition {
-
-    private String uri;
-    private String clientId;
-
+    private final MqttConfig.ClientConfig clientConfig;
+    private final MqttPoolDefinition poolDefinition;
     private MqttListenerDefinition listenerDefinition;
     private MqttPublisherDefinition publisherDefinition;
-    private MqttConnectOptionsDefinition connectOptionsDefinition;
-    private MqttReconnectionMode reconnectionMode = MqttReconnectionMode.ALWAYS;
-    private MqttPoolDefinition poolDefinition;
-    private int reconnectionInterval = 2;
 
-    /**
-     * Default constructor.
-     * 
-     * @param uri
-     *            mqtt broker url
-     * @param clientId
-     *            client id to use.
-     */
-    public MqttClientDefinition(String uri, String clientId) {
-        this.uri = uri;
-        this.clientId = clientId;
+    MqttClientDefinition(MqttConfig.ClientConfig clientConfig) {
+        this.clientConfig = clientConfig;
+        this.poolDefinition = new MqttPoolDefinition(clientConfig.getPoolConfig());
     }
 
-    public String getUri() {
-        return uri;
+    MqttConfig.ClientConfig getConfig() {
+        return clientConfig;
     }
 
-    public String getClientId() {
-        return clientId;
-    }
-
-    public MqttListenerDefinition getListenerDefinition() {
+    MqttListenerDefinition getListenerDefinition() {
         return listenerDefinition;
     }
 
-    public void setListenerDefinition(MqttListenerDefinition listenerDefinition) {
+    void setListenerDefinition(MqttListenerDefinition listenerDefinition) {
         this.listenerDefinition = listenerDefinition;
     }
 
-    public MqttConnectOptionsDefinition getConnectOptionsDefinition() {
-        return connectOptionsDefinition;
-    }
-
-    public void setConnectOptionsDefinition(MqttConnectOptionsDefinition connectOptionsDefinition) {
-        this.connectOptionsDefinition = connectOptionsDefinition;
-    }
-
-    public MqttPublisherDefinition getPublisherDefinition() {
+    MqttPublisherDefinition getPublisherDefinition() {
         return publisherDefinition;
     }
 
-    public void setPublisherDefinition(MqttPublisherDefinition publisherDefinition) {
+    void setPublisherDefinition(MqttPublisherDefinition publisherDefinition) {
         this.publisherDefinition = publisherDefinition;
     }
 
-    public MqttReconnectionMode getReconnectionMode() {
-        return reconnectionMode;
-    }
-
-    public void setReconnectionMode(MqttReconnectionMode reconnectionMode) {
-        this.reconnectionMode = reconnectionMode;
-    }
-
-    public int getReconnectionInterval() {
-        return reconnectionInterval;
-    }
-
-    public void setReconnectionInterval(int reconnectionInterval) {
-        this.reconnectionInterval = reconnectionInterval;
-    }
-
-    public MqttPoolDefinition getPoolDefinition() {
+    MqttPoolDefinition getPoolDefinition() {
         return poolDefinition;
     }
-
-    public void setPoolDefinition(MqttPoolDefinition poolDefinition) {
-        this.poolDefinition = poolDefinition;
-    }
-
 }
