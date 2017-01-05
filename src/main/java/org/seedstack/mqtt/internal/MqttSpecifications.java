@@ -15,21 +15,34 @@ import org.seedstack.mqtt.MqttRejectHandler;
 import org.seedstack.mqtt.MqttRejectedExecutionHandler;
 import org.seedstack.seed.core.internal.utils.SpecificationBuilder;
 
+import java.lang.reflect.Modifier;
+
 import static org.seedstack.shed.reflect.AnnotationPredicates.elementAnnotatedWith;
 import static org.seedstack.shed.reflect.ClassPredicates.classIsAssignableFrom;
+import static org.seedstack.shed.reflect.ClassPredicates.classIsInterface;
+import static org.seedstack.shed.reflect.ClassPredicates.classModifierIs;
 
 class MqttSpecifications {
-    public static final Specification<Class<?>> MQTT_LISTENER_SPEC = new SpecificationBuilder<>(classIsAssignableFrom(MqttCallback.class)
-            .and(elementAnnotatedWith(MqttListener.class, false)))
+    static final Specification<Class<?>> MQTT_LISTENER_SPEC = new SpecificationBuilder<>(
+            classIsAssignableFrom(MqttCallback.class)
+                    .and(classIsInterface().negate())
+                    .and(classModifierIs(Modifier.ABSTRACT).negate())
+                    .and(elementAnnotatedWith(MqttListener.class, false)))
             .build();
 
 
-    public static final Specification<Class<?>> MQTT_PUBLISHER_SPEC = new SpecificationBuilder<>(classIsAssignableFrom(MqttCallback.class)
-            .and(elementAnnotatedWith(MqttPublishHandler.class, false)))
+    static final Specification<Class<?>> MQTT_PUBLISHER_SPEC = new SpecificationBuilder<>(
+            classIsAssignableFrom(MqttCallback.class)
+                    .and(classIsInterface().negate())
+                    .and(classModifierIs(Modifier.ABSTRACT).negate())
+                    .and(elementAnnotatedWith(MqttPublishHandler.class, false)))
             .build();
 
 
-    public static final Specification<Class<?>> MQTT_REJECT_HANDLER_SPEC = new SpecificationBuilder<>(classIsAssignableFrom(MqttRejectedExecutionHandler.class)
-            .and(elementAnnotatedWith(MqttRejectHandler.class, false)))
+    static final Specification<Class<?>> MQTT_REJECT_HANDLER_SPEC = new SpecificationBuilder<>(
+            classIsAssignableFrom(MqttRejectedExecutionHandler.class)
+                    .and(classIsInterface().negate())
+                    .and(classModifierIs(Modifier.ABSTRACT).negate())
+                    .and(elementAnnotatedWith(MqttRejectHandler.class, false)))
             .build();
 }
