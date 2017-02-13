@@ -1,6 +1,7 @@
 ---
 title: "Configuration"
-name: "MQTT"
+parent: "MQTT"
+weight: -1
 repo: "https://github.com/seedstack/mqtt-addon"
 tags:
     - "mqtt"

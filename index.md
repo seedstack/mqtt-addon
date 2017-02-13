@@ -1,12 +1,8 @@
 ---
-title: "Basics"
-name: "MQTT"
+title: "MQTT"
 repo: "https://github.com/seedstack/mqtt-addon"
-date: 2016-05-18
 author: Thierry BOUVET
 description: "Provides configuration, injection and connection resilience for Message Queuing Telemetry Transport"
-backend: true
-weight: -1
 zones:
     - Addons
 menu:
