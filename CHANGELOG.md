@@ -1,6 +1,7 @@
-# Version 2.0.1 (2017-01-??)
+# Version 2.0.1 (2017-02-26)
 
 * [chg] Specifications for listeners, publishers and reject handlers are now excluding interfaces and abstract classes.
+* [fix] Fix transitive dependency to poms SNAPSHOT.
 
 # Version 2.0.0 (2017-01-04)
 

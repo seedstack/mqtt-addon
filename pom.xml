@@ -22,10 +22,10 @@
     <version>2.0.1-SNAPSHOT</version>
 
     <properties>
-        <seed.version>3.0.0</seed.version>
+        <seed.version>3.1.0</seed.version>
         <paho.version>1.0.2</paho.version>
 
-        <compatibility.skip>true</compatibility.skip>
+        <compatibility.version>2.0.0</compatibility.version>
 
         <bintray.package>mqtt-addon</bintray.package>
     </properties>
