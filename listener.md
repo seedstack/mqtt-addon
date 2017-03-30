@@ -3,11 +3,6 @@ title: "Receiving messages"
 parent: "MQTT"
 weight: -1
 repo: "https://github.com/seedstack/mqtt-addon"
-tags:
-    - "receiving"
-    - "message"
-    - "mqtt"
-    - "listener"
 zones:
     - Addons
 menu:

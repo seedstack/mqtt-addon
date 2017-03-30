@@ -3,8 +3,6 @@ title: "Configuration"
 parent: "MQTT"
 weight: -1
 repo: "https://github.com/seedstack/mqtt-addon"
-tags:
-    - "mqtt"
 zones:
     - Addons
 menu:

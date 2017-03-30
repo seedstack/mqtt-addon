@@ -3,11 +3,6 @@ title: "Publish handler"
 parent: "MQTT"
 weight: -1
 repo: "https://github.com/seedstack/mqtt-addon"
-tags:
-    - "message"
-    - "mqtt"
-    - "publish"
-    - "handler"
 zones:
     - Addons
 menu:

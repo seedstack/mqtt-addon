@@ -3,10 +3,6 @@ title: "Publishing messages"
 parent: "MQTT"
 weight: -1
 repo: "https://github.com/seedstack/mqtt-addon"
-tags:
-    - "message"
-    - "mqtt"
-    - "publish"
 zones:
     - Addons
 menu:
