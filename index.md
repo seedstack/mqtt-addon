@@ -14,7 +14,7 @@ menu:
 
 MQTT is a light-weight publish-subscribe messaging protocol particularly suited for IoT communication. This add-on provides
 an integration of the MQTT protocol in SeedStack. It uses the Eclipse PAHO implementation to automatically manage brokers, 
-connections and message consumers/publishers. Automatic connection recovery is done after an MQTT connection failure.
+connections and message consumers/publishers. Automatic connection recovery is done after an MQTT connection failure.<!--more-->
 
 # Dependencies
 
