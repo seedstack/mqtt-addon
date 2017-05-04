@@ -61,7 +61,6 @@ mqtt:
         keepAlive: (int)
         # The policy to apply when the local queue is full
         rejectedExecutionPolicy: (ABORT|DISCARD|CALLER_RUNS|DISCARD_OLDEST)
-      
 ```
 {{% /config %}}
     
