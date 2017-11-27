@@ -1,22 +1,21 @@
 ---
 title: "MQTT"
+addon: "MQTT"
 repo: "https://github.com/seedstack/mqtt-addon"
 author: Thierry BOUVET
-description: "Provides configuration, injection and connection resilience for Message Queuing Telemetry Transport"
+description: "Provides configuration, injection and connection resilience for MQTT."
 tags:
     - communication
 zones:
     - Addons
-menu:
-    AddonMQTT:
-        weight: 10
+noMenu: true    
 ---
 
 MQTT is a light-weight publish-subscribe messaging protocol particularly suited for IoT communication. This add-on provides
 an integration of the MQTT protocol in SeedStack. It uses the Eclipse PAHO implementation to automatically manage brokers, 
 connections and message consumers/publishers. Automatic connection recovery is done after an MQTT connection failure.<!--more-->
 
-# Dependencies
+## Dependencies
 
 To add the MQTT add-on to your project, add the following dependency: 
 
@@ -26,7 +25,7 @@ You must also add the Eclipse PAHO implementation:
 
 {{< dependency g="org.eclipse.paho" a="org.eclipse.paho.client.mqttv3" v="1.0.2" >}}
 
-# Configuration
+## Configuration
 
 Configuration is done by declaring one or more MQTT clients:
 
@@ -64,7 +63,7 @@ mqtt:
 ```
 {{% /config %}}
     
-# Consuming messages
+## Consuming messages
 
 To receive MQTT messages, create a listener class which implements the {{< java "org.eclipse.paho.client.mqttv3.MqttCallback" >}}   
 interface and is annotated with {{< java "org.seedstack.mqtt.MqttListener" "@" >}}:
@@ -114,7 +113,7 @@ myapp:
     qos: 1, 1, 1
 ```
 
-# Publishing messages
+## Publishing messages
 
 In any class, just inject an MQTT client with the {{< java "org.eclipse.paho.client.mqttv3.IMqttClient" >}} interface
 and the corresponding name:
@@ -146,7 +145,7 @@ public class SomeClass {
 }
 ```
 
-## Publication handler
+### Publication handler
 
 You can define a publication handler for any MQTT client creating a class implementing the {{< java "org.eclipse.paho.client.mqttv3.MqttCallback" >}}
 interface and annotating it with {{< java "org.seedstack.mqtt.MqttPublishHandler" "@" >}}:
