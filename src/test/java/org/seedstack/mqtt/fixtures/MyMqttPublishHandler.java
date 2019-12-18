@@ -1,13 +1,14 @@
-/**
- * Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+/*
+ * Copyright © 2013-2019, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+/**
+ * 
+ */
 package org.seedstack.mqtt.fixtures;
-
-import java.util.concurrent.CountDownLatch;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -16,12 +17,13 @@ import org.seedstack.mqtt.MqttPublishHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@MqttPublishHandler(clients = {"client3", "client4"})
-public class DummyMqttPublisherListener implements MqttCallback {
+/**
+ * {@link MqttPublishHandler} fixture to test Mqtt communication.
+ */
+@MqttPublishHandler(clients = "client1")
+public class MyMqttPublishHandler implements MqttCallback {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DummyMqttPublisherListener.class);
-
-    public static CountDownLatch messagePublishedCount = new CountDownLatch(2);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MyMqttPublishHandler.class);
 
     @Override
     public void connectionLost(Throwable cause) {
@@ -29,12 +31,11 @@ public class DummyMqttPublisherListener implements MqttCallback {
 
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
-
     }
 
     @Override
     public void deliveryComplete(IMqttDeliveryToken token) {
-        LOGGER.info("message delivered to client id : {}", token.getClient().getClientId());
-        messagePublishedCount.countDown();
+        LOGGER.info("Delivered token {}: result [{}]", token.getTopics(), token.isComplete());
     }
+
 }

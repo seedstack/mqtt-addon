@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+/*
+ * Copyright © 2013-2019, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -8,19 +8,22 @@
 /**
  *
  */
+
 package org.seedstack.mqtt.internal;
 
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 import mockit.Deencapsulation;
 import mockit.Expectations;
 import mockit.Invocation;
 import mockit.Mock;
 import mockit.MockUp;
 import mockit.Mocked;
-import mockit.StrictExpectations;
 import mockit.Verifications;
-import mockit.integration.junit4.JMockit;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -28,17 +31,10 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.MqttSecurityException;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.seedstack.mqtt.MqttConfig;
 import org.seedstack.mqtt.MqttRejectedExecutionHandler;
 import org.seedstack.seed.SeedException;
 
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-
-@RunWith(JMockit.class)
 public class MqttCallbackAdapterTest {
 
     @Mocked
@@ -62,10 +58,11 @@ public class MqttCallbackAdapterTest {
 
     @Test
     public void testConnectionLostWithoutReconnection() throws Exception {
-        final MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig().setReconnectionMode(MqttConfig.ClientConfig.ReconnectionMode.NONE));
+        final MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig().setReconnectionMode(
+                MqttConfig.ClientConfig.ReconnectionMode.NONE));
         MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
 
-        new StrictExpectations() {
+        new Expectations() {
             {
                 mqttClient.getClientId();
                 result = clientDefinition.getConfig().getClientId();
@@ -85,11 +82,12 @@ public class MqttCallbackAdapterTest {
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Test
     public void testConnectionLostWithCustomReconnectionAndNoHandler() throws Exception {
-        final MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig().setReconnectionMode(MqttConfig.ClientConfig.ReconnectionMode.CUSTOM));
+        final MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig().setReconnectionMode(
+                MqttConfig.ClientConfig.ReconnectionMode.CUSTOM));
         MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
         Deencapsulation.setField(callbackAdapter, "injector", injector);
 
-        new StrictExpectations() {
+        new Expectations() {
             {
                 mqttClient.getClientId();
                 result = clientDefinition.getConfig().getClientId();
@@ -108,7 +106,8 @@ public class MqttCallbackAdapterTest {
 
     @Test
     public void testConnectionLostWithCustomReconnection() throws Exception {
-        final MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig().setReconnectionMode(MqttConfig.ClientConfig.ReconnectionMode.CUSTOM));
+        final MqttClientDefinition clientDefinition = new MqttClientDefinition(createClientConfig().setReconnectionMode(
+                MqttConfig.ClientConfig.ReconnectionMode.CUSTOM));
         MqttCallbackAdapter callbackAdapter = new MqttCallbackAdapter(mqttClient, clientDefinition);
         Deencapsulation.setField(callbackAdapter, "injector", injector);
 
@@ -166,7 +165,6 @@ public class MqttCallbackAdapterTest {
         };
 
         final MockUp<Timer> timerMock = new MockUp<Timer>() {
-
             @Mock
             public void scheduleAtFixedRate(Invocation inv, TimerTask task, long delay, long period) {
                 inv.proceed(task, 0, 10000);
@@ -185,11 +183,10 @@ public class MqttCallbackAdapterTest {
                 mqttClientUtils.subscribe(mqttClient, listenerDefinition);
                 times = 1;
 
-                timerMock.getMockInstance().cancel();
+                new Timer().cancel();
                 times = 1;
             }
         };
-        timerMock.tearDown();
     }
 
     @SuppressWarnings("static-access")
@@ -227,11 +224,10 @@ public class MqttCallbackAdapterTest {
                 mqttClientUtils.connect(mqttClient, clientDefinition);
                 times = 1;
 
-                timerMock.getMockInstance().cancel();
+                new Timer().cancel();
                 times = 1;
             }
         };
-        timerMock.tearDown();
     }
 
     @SuppressWarnings("static-access")
@@ -267,12 +263,11 @@ public class MqttCallbackAdapterTest {
         // Just wait for timer execution
         Thread.sleep(100);
 
-        new Verifications(0) {
+        new Verifications() {
             {
-                timerMock.getMockInstance().cancel();
+                new Timer().cancel();
             }
         };
-        timerMock.tearDown();
     }
 
     @Test
@@ -283,7 +278,7 @@ public class MqttCallbackAdapterTest {
         Deencapsulation.setField(callbackAdapter, "injector", injector);
         callbackAdapter.setListenerKey(listenerKey);
 
-        new StrictExpectations() {
+        new Expectations() {
             {
                 injector.getInstance(listenerKey);
                 result = listener;
@@ -309,7 +304,7 @@ public class MqttCallbackAdapterTest {
         callbackAdapter.setRejectHandlerKey(rejectKey);
         callbackAdapter.setPool(threadPool);
 
-        new StrictExpectations() {
+        new Expectations() {
             {
                 injector.getInstance(listenerKey);
                 result = listener;
@@ -365,7 +360,7 @@ public class MqttCallbackAdapterTest {
         callbackAdapter.setListenerKey(listenerKey);
         callbackAdapter.setPool(threadPool);
 
-        new StrictExpectations() {
+        new Expectations() {
             {
                 threadPool.submit((MqttListenerTask) any);
                 result = new RejectedExecutionException("Fake exception");
@@ -383,7 +378,7 @@ public class MqttCallbackAdapterTest {
         Deencapsulation.setField(callbackAdapter, "injector", injector);
         callbackAdapter.setPublisherKey(publisherKey);
 
-        new StrictExpectations() {
+        new Expectations() {
             {
                 injector.getInstance(publisherKey);
                 result = publisher;

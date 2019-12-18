@@ -6,36 +6,34 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 /**
- * 
+ *
  */
-package org.seedstack.mqtt.internal.fixtures;
+
+package org.seedstack.mqtt.fixtures;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.seedstack.mqtt.MqttPublishHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.seedstack.mqtt.MqttListener;
 
 /**
- * {@link MqttPublishHandler} fixture to test Mqtt communication.
+ * {@link @MqttListener} fixture used to test Mqtt communication.
  */
-@MqttPublishHandler(clients = "clientOK1")
-public class PublishHandler implements MqttCallback {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(PublishHandler.class);
-
+@MqttListener(clients = "", topics = {"${test.dest1.name}", "${test.dest2.name}"}, qos = {
+        "${test.dest1.qos}", "${test.dest2.qos}"})
+public class DisabledMqttListener implements MqttCallback {
     @Override
     public void connectionLost(Throwable cause) {
+        throw new IllegalStateException("should not be reached");
     }
 
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
+        throw new IllegalStateException("should not be reached");
     }
 
     @Override
     public void deliveryComplete(IMqttDeliveryToken token) {
-        LOGGER.info("Delivered token {}: result [{}]", token.getTopics(), token.isComplete());
+        throw new IllegalStateException("should not be reached");
     }
-
 }

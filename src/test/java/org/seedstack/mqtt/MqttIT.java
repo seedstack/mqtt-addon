@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+/*
+ * Copyright © 2013-2019, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -8,34 +8,38 @@
 /**
  *
  */
+
 package org.seedstack.mqtt;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.google.inject.Inject;
-import org.assertj.core.api.Assertions;
+import java.nio.charset.Charset;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import javax.inject.Named;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.seedstack.mqtt.fixtures.BrokerFixture;
 import org.seedstack.mqtt.fixtures.TestMqttListener;
 import org.seedstack.mqtt.spi.MqttClientInfo;
 import org.seedstack.mqtt.spi.MqttInfo;
-import org.seedstack.seed.it.AfterKernel;
-import org.seedstack.seed.it.BeforeKernel;
-import org.seedstack.seed.it.SeedITRunner;
-
-import javax.inject.Named;
-import java.nio.charset.Charset;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.TimeUnit;
+import org.seedstack.seed.testing.LaunchMode;
+import org.seedstack.seed.testing.LaunchWith;
+import org.seedstack.seed.testing.junit4.SeedITRunner;
 
 /**
  * Test publish/subscribe for {@link MqttClient}.
  */
 @RunWith(SeedITRunner.class)
+@LaunchWith(mode = LaunchMode.PER_TEST)
 public class MqttIT {
 
     @Inject
@@ -49,19 +53,19 @@ public class MqttIT {
     @Inject
     MqttInfo mqttInfo;
 
-    @BeforeKernel
+    @BeforeClass
     public static void startBroker() throws Exception {
         BrokerFixture.startBroker();
     }
 
-    @AfterKernel
+    @AfterClass
     public static void stopBroker() throws Exception {
         BrokerFixture.stopBroker();
     }
 
     @Test
     public void checkAll() throws Exception {
-        Assertions.assertThat(mqttClient).isNotNull();
+        assertThat(mqttClient).isNotNull();
 
         FutureTask<String> task = new FutureTask<>(() -> {
             while (TestMqttListener.messageReceived == null) {
@@ -77,17 +81,17 @@ public class MqttIT {
         executorService.execute(task);
         executorService.shutdown();
         String result = task.get(2, TimeUnit.SECONDS);
-        Assertions.assertThat(result).isEqualTo(expected);
+        assertThat(result).isEqualTo(expected);
     }
 
     @Test
     public void mqttInfoFacetTest() {
-        Assertions.assertThat(mqttInfo).isNotNull();
-        Assertions.assertThat(mqttInfo.getClientNames()).hasSize(5);
+        assertThat(mqttInfo).isNotNull();
+        assertThat(mqttInfo.getClientNames()).hasSize(5);
         for (String clientId : mqttInfo.getClientNames()) {
             MqttClientInfo mqttClientInfo = mqttInfo.getClientInfo(clientId);
-            Assertions.assertThat(mqttClientInfo).isNotNull();
-            Assertions.assertThat(mqttClientInfo.getClientId()).isNotNull();
+            assertThat(mqttClientInfo).isNotNull();
+            assertThat(mqttClientInfo.getClientId()).isNotNull();
         }
     }
 }

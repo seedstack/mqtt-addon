@@ -1,10 +1,11 @@
-/**
- * Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+/*
+ * Copyright © 2013-2019, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.mqtt.spi;
 
 /**
@@ -41,11 +42,15 @@ public class MqttClientInfo {
     }
 
     public String[] getTopicFilters() {
-        return topicFilters;
+        if (topicFilters != null) {
+            return topicFilters.clone();
+        } else {
+            return new String[]{};
+        }
     }
 
     public void setTopicFilters(String[] topicFilters) {
-        this.topicFilters = topicFilters;
+        this.topicFilters = topicFilters.clone();
     }
 
     public String getMqttReconnectionMode() {

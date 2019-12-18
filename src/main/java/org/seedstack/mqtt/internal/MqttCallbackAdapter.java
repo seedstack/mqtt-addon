@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+/*
+ * Copyright © 2013-2019, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -12,6 +12,10 @@ package org.seedstack.mqtt.internal;
 
 import com.google.inject.Injector;
 import com.google.inject.Key;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ThreadPoolExecutor;
+import javax.inject.Inject;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -21,11 +25,6 @@ import org.seedstack.mqtt.MqttRejectedExecutionHandler;
 import org.seedstack.seed.SeedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * {@link MqttCallback} used for default reconnection mode.
@@ -90,8 +89,8 @@ class MqttCallbackAdapter implements MqttCallback {
         };
         timer.scheduleAtFixedRate(
                 task,
-                clientDefinition.getConfig().getReconnectionInterval() * 1000,
-                clientDefinition.getConfig().getReconnectionInterval() * 1000
+                clientDefinition.getConfig().getReconnectionInterval() * 1000L,
+                clientDefinition.getConfig().getReconnectionInterval() * 1000L
         );
     }
 

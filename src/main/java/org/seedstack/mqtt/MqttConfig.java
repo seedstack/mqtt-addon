@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+/*
+ * Copyright © 2013-2019, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,17 +7,14 @@
  */
 package org.seedstack.mqtt;
 
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.hibernate.validator.constraints.NotBlank;
-import org.seedstack.coffig.Config;
-import org.seedstack.coffig.SingleValue;
-
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.seedstack.coffig.Config;
+import org.seedstack.coffig.SingleValue;
+import org.seedstack.seed.validation.NotBlank;
 
 @Config("mqtt")
 public class MqttConfig {
@@ -38,14 +35,11 @@ public class MqttConfig {
         private String serverUri;
         @NotBlank
         private String clientId = MqttClient.generateClientId();
-        @NotNull
         private ReconnectionMode reconnectionMode = ReconnectionMode.ALWAYS;
-        @Min(1)
         private int reconnectionInterval = 2;
         @Config("connection")
         private MqttConnectOptions connectOptions;
         @Config("pool")
-        @NotNull
         private PoolConfig poolConfig = new PoolConfig();
 
         public String getServerUri() {

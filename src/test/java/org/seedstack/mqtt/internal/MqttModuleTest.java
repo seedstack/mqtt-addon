@@ -1,29 +1,26 @@
-/**
- * Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+/*
+ * Copyright © 2013-2019, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.mqtt.internal;
 
 import com.google.inject.Binder;
 import com.google.inject.name.Names;
+import java.util.concurrent.ConcurrentHashMap;
 import mockit.Mocked;
 import mockit.Verifications;
-import mockit.integration.junit4.JMockit;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.seedstack.mqtt.MqttConfig;
 import org.seedstack.mqtt.MqttRejectedExecutionHandler;
 import org.seedstack.mqtt.internal.fixtures.Listener1;
 import org.seedstack.mqtt.internal.fixtures.PublishHandler;
 
-import java.util.concurrent.ConcurrentHashMap;
-
-@RunWith(JMockit.class)
 public class MqttModuleTest {
     @Mocked
     private IMqttClient mqttClient;

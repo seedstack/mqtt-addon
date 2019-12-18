@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2013-2016, The SeedStack authors <http://seedstack.org>
+/*
+ * Copyright © 2013-2019, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -8,6 +8,7 @@
 /**
  *
  */
+
 package org.seedstack.mqtt.internal;
 
 import com.google.common.base.Strings;
@@ -15,6 +16,16 @@ import io.nuun.kernel.api.plugin.InitState;
 import io.nuun.kernel.api.plugin.context.Context;
 import io.nuun.kernel.api.plugin.context.InitContext;
 import io.nuun.kernel.api.plugin.request.ClasspathScanRequest;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -33,17 +44,6 @@ import org.seedstack.seed.SeedException;
 import org.seedstack.seed.core.internal.AbstractSeedPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * This plugin provides MQTT support through a plain configuration. It uses Paho
@@ -81,21 +81,23 @@ public class MqttPlugin extends AbstractSeedPlugin implements MqttInfo {
 
         configureMqttListeners(initContext.scannedTypesBySpecification().get(MqttSpecifications.MQTT_LISTENER_SPEC));
         configureMqttPublishers(initContext.scannedTypesBySpecification().get(MqttSpecifications.MQTT_PUBLISHER_SPEC));
-        configureMqttRejectHandler(initContext.scannedTypesBySpecification().get(MqttSpecifications.MQTT_REJECT_HANDLER_SPEC));
+        configureMqttRejectHandler(initContext.scannedTypesBySpecification()
+                .get(MqttSpecifications.MQTT_REJECT_HANDLER_SPEC));
 
         registerMqttClients();
 
         return InitState.INITIALIZED;
     }
 
+    @SuppressWarnings("unchecked")
     private void configureMqttRejectHandler(Collection<Class<?>> candidates) {
         for (Class<?> candidate : candidates) {
-            @SuppressWarnings("unchecked")
-            Class<? extends MqttRejectedExecutionHandler> rejectClass = (Class<? extends MqttRejectedExecutionHandler>) candidate;
+            Class<? extends MqttRejectedExecutionHandler> rejectClass =
+                    (Class<? extends MqttRejectedExecutionHandler>) candidate;
             String rejectName = rejectClass.getCanonicalName();
             MqttRejectHandler annotation = rejectClass.getAnnotation(MqttRejectHandler.class);
             String[] clients = resolveSubstitutes(annotation.clients());
-            if (clients != null && clients.length > 0) {
+            if (clients.length > 0) {
                 for (String client : clients) {
                     if (!mqttClientDefinitions.containsKey(client)) {
                         throw SeedException.createNew(MqttErrorCode.MQTT_REJECT_HANDLER_CLIENT_NOT_FOUND)
@@ -107,8 +109,7 @@ public class MqttPlugin extends AbstractSeedPlugin implements MqttInfo {
                     mqttClientDefinitions.get(client).getPoolDefinition().setRejectHandler(rejectName, rejectClass);
                 }
             } else {
-                throw SeedException.createNew(MqttErrorCode.MQTT_REJECT_HANDLER_CLIENT_NOT_FOUND)
-                        .put("client", Arrays.toString(annotation.clients())).put("rejectName", rejectName);
+                LOGGER.info("Ignoring reject handler without configured client: {}", rejectName);
             }
         }
     }
@@ -120,8 +121,7 @@ public class MqttPlugin extends AbstractSeedPlugin implements MqttInfo {
             String mqttPublisherName = mqttPublisherClass.getCanonicalName();
             MqttPublishHandler annotation = mqttPublisherClass.getAnnotation(MqttPublishHandler.class);
             String[] clients = resolveSubstitutes(annotation.clients());
-            if (clients != null && clients.length > 0) {
-
+            if (clients.length > 0) {
                 for (String client : clients) {
                     if (!mqttClientDefinitions.containsKey(client)) {
                         throw SeedException.createNew(MqttErrorCode.MQTT_PUBLISHER_CLIENT_NOT_FOUND)
@@ -135,14 +135,10 @@ public class MqttPlugin extends AbstractSeedPlugin implements MqttInfo {
                             .setPublisherDefinition(new MqttPublisherDefinition(mqttPublisherClass, mqttPublisherName));
                 }
             } else {
-                throw SeedException.createNew(MqttErrorCode.MQTT_PUBLISHER_CLIENT_NOT_FOUND)
-                        .put("client", String.valueOf(annotation.clients()))
-                        .put("publisherName", mqttPublisherName);
+                LOGGER.info("Ignoring publisher without configured client: {}", mqttPublisherName);
             }
         }
-
     }
-
 
     private void registerMqttClients() {
         for (Entry<String, MqttClientDefinition> entry : mqttClientDefinitions.entrySet()) {
@@ -171,7 +167,6 @@ public class MqttPlugin extends AbstractSeedPlugin implements MqttInfo {
             MqttListener annotation = mqttListenerClass.getAnnotation(MqttListener.class);
             String[] clients = resolveSubstitutes(annotation.clients());
             if (clients.length > 0) {
-
                 for (String client : clients) {
                     if (!mqttClientDefinitions.containsKey(client)) {
                         throw SeedException.createNew(MqttErrorCode.MQTT_LISTENER_CLIENT_NOT_FOUND)
@@ -195,15 +190,16 @@ public class MqttPlugin extends AbstractSeedPlugin implements MqttInfo {
                                     .put("value", qosList[i]);
                         }
                     }
-                    LOGGER.debug("New MqttListener found: {} for client {} and topicFiler {}", mqttListenerName, client, topics);
+                    LOGGER.debug("New MqttListener found: {} for client {} and topicFiler {}",
+                            mqttListenerName,
+                            client,
+                            topics);
 
                     mqttClientDefinitions.get(client).setListenerDefinition(new MqttListenerDefinition(
                             mqttListenerClass, mqttListenerName, topics, qosListSubstitute));
                 }
             } else {
-                throw SeedException.createNew(MqttErrorCode.MQTT_LISTENER_CLIENT_NOT_FOUND)
-                        .put("client", Arrays.toString(annotation.clients()))
-                        .put("listenerName", mqttListenerName);
+                LOGGER.info("Ignoring listener without configured client: {}", mqttListenerName);
             }
         }
     }
@@ -214,7 +210,9 @@ public class MqttPlugin extends AbstractSeedPlugin implements MqttInfo {
             for (String value : values) {
                 String substitutedValue = application.substituteWithConfiguration(value);
                 if (!Strings.isNullOrEmpty(substitutedValue)) {
-                    result.addAll(Arrays.stream(substitutedValue.split(",")).map(String::trim).collect(Collectors.toList()));
+                    result.addAll(Arrays.stream(substitutedValue.split(","))
+                            .map(String::trim)
+                            .collect(Collectors.toList()));
                 }
             }
         }

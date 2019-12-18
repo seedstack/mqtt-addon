@@ -1,3 +1,7 @@
+# Version 2.1.0 (2019-12-17)
+
+* [chg] When the `clients` parameter of MQTT annotations is empty, an error is no longer thrown but the annotated handler is ignored instead.
+
 # Version 2.0.1 (2017-02-26)
 
 * [chg] Specifications for listeners, publishers and reject handlers are now excluding interfaces and abstract classes.
