@@ -14,7 +14,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.seedstack.mqtt.MqttRejectHandler;
 import org.seedstack.mqtt.MqttRejectedExecutionHandler;
 
-@MqttRejectHandler(clients = "clientOK1")
+@MqttRejectHandler(clients = "${test.clientOK1}")
 public class MyRejectHandler implements MqttRejectedExecutionHandler {
 
     @Override

@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 /**
  * {@link MqttPublishHandler} fixture to test Mqtt communication.
  */
-@MqttPublishHandler(clients = "client1")
+@MqttPublishHandler(clients = "${test.client1}")
 public class MyMqttPublishHandler implements MqttCallback {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MyMqttPublishHandler.class);

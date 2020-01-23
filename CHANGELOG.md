@@ -1,3 +1,7 @@
+# Version 2.1.1 (2019-01-24)
+
+* [new] Add the ability to disable MQTT completely with configuration property `mqtt.enabled`.
+
 # Version 2.1.0 (2019-12-17)
 
 * [chg] When the `clients` parameter of MQTT annotations is empty, an error is no longer thrown but the annotated handler is ignored instead.

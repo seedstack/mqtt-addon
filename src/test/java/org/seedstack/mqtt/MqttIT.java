@@ -31,6 +31,7 @@ import org.seedstack.mqtt.fixtures.BrokerFixture;
 import org.seedstack.mqtt.fixtures.TestMqttListener;
 import org.seedstack.mqtt.spi.MqttClientInfo;
 import org.seedstack.mqtt.spi.MqttInfo;
+import org.seedstack.seed.testing.ConfigurationProfiles;
 import org.seedstack.seed.testing.LaunchMode;
 import org.seedstack.seed.testing.LaunchWith;
 import org.seedstack.seed.testing.junit4.SeedITRunner;
@@ -40,6 +41,7 @@ import org.seedstack.seed.testing.junit4.SeedITRunner;
  */
 @RunWith(SeedITRunner.class)
 @LaunchWith(mode = LaunchMode.PER_TEST)
+@ConfigurationProfiles("mqttConfigured")
 public class MqttIT {
 
     @Inject

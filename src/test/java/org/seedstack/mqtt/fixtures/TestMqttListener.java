@@ -22,7 +22,7 @@ import java.nio.charset.Charset;
 /**
  * {@link @MqttListener} fixture used to test Mqtt communication.
  */
-@MqttListener(clients = "client1", topics = { "${test.dest1.name}", "${test.dest2.name}" }, qos = {
+@MqttListener(clients = "${test.client1}", topics = { "${test.dest1.name}", "${test.dest2.name}" }, qos = {
         "${test.dest1.qos}", "${test.dest2.qos}" })
 public class TestMqttListener implements MqttCallback {
 

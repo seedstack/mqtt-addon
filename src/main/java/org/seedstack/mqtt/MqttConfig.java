@@ -5,6 +5,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
 package org.seedstack.mqtt;
 
 import java.util.Collections;
@@ -18,7 +19,17 @@ import org.seedstack.seed.validation.NotBlank;
 
 @Config("mqtt")
 public class MqttConfig {
+    private boolean enabled = true;
     private Map<String, ClientConfig> clients = new HashMap<>();
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public MqttConfig setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        return this;
+    }
 
     public Map<String, ClientConfig> getClients() {
         return Collections.unmodifiableMap(clients);

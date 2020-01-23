@@ -6,7 +6,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-mqtt:
+logging:
+  loggers:
+    org.seedstack.seed.core.internal.configuration:
+      level: DEBUG
+
+mqtt<mqttConfigured>:
   clients:
     client1:
       serverUri: tcp://localhost:1883
@@ -51,8 +56,10 @@ mqtt:
         keepAlive: 60
         rejectedExecutionPolicy: ABORT
 
-test:
+test<mqttConfigured>:
+  clientOK1: clientOK1
   publisherFilter: client3, client4
+  client1: client1
   dest1:
     name: topic, topic2, topic3
     qos: 1, 1, 1

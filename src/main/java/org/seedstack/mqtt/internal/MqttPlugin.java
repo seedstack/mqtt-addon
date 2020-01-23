@@ -72,19 +72,25 @@ public class MqttPlugin extends AbstractSeedPlugin implements MqttInfo {
 
     @Override
     public InitState initialize(InitContext initContext) {
-        MqttConfig mqttConfig = getConfiguration(MqttConfig.class);
         application = getApplication();
+        MqttConfig mqttConfig = getConfiguration(MqttConfig.class);
 
-        for (Entry<String, MqttConfig.ClientConfig> clientEntry : mqttConfig.getClients().entrySet()) {
-            mqttClientDefinitions.put(clientEntry.getKey(), new MqttClientDefinition(clientEntry.getValue()));
+        if (mqttConfig.isEnabled()) {
+            for (Entry<String, MqttConfig.ClientConfig> clientEntry : mqttConfig.getClients().entrySet()) {
+                mqttClientDefinitions.put(clientEntry.getKey(), new MqttClientDefinition(clientEntry.getValue()));
+            }
+
+            configureMqttListeners(initContext.scannedTypesBySpecification()
+                    .get(MqttSpecifications.MQTT_LISTENER_SPEC));
+            configureMqttPublishers(initContext.scannedTypesBySpecification()
+                    .get(MqttSpecifications.MQTT_PUBLISHER_SPEC));
+            configureMqttRejectHandler(initContext.scannedTypesBySpecification()
+                    .get(MqttSpecifications.MQTT_REJECT_HANDLER_SPEC));
+
+            registerMqttClients();
+        } else {
+            LOGGER.info("MQTT plugin is disabled by configuration");
         }
-
-        configureMqttListeners(initContext.scannedTypesBySpecification().get(MqttSpecifications.MQTT_LISTENER_SPEC));
-        configureMqttPublishers(initContext.scannedTypesBySpecification().get(MqttSpecifications.MQTT_PUBLISHER_SPEC));
-        configureMqttRejectHandler(initContext.scannedTypesBySpecification()
-                .get(MqttSpecifications.MQTT_REJECT_HANDLER_SPEC));
-
-        registerMqttClients();
 
         return InitState.INITIALIZED;
     }

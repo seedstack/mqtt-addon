@@ -12,7 +12,7 @@ import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.seedstack.mqtt.MqttListener;
 
-@MqttListener(clients = "clientOK1", topics = "t1", qos = "0")
+@MqttListener(clients = "${test.clientOK1}", topics = "t1", qos = "0")
 public class Listener1 implements MqttCallback {
 
     @Override
