@@ -1,5 +1,5 @@
 /*
- * Copyright © 2013-2019, The SeedStack authors <http://seedstack.org>
+ * Copyright © 2013-2020, The SeedStack authors <http://seedstack.org>
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -16,26 +16,8 @@ import io.nuun.kernel.api.plugin.InitState;
 import io.nuun.kernel.api.plugin.context.Context;
 import io.nuun.kernel.api.plugin.context.InitContext;
 import io.nuun.kernel.api.plugin.request.ClasspathScanRequest;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import org.eclipse.paho.client.mqttv3.IMqttClient;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.seedstack.mqtt.MqttConfig;
-import org.seedstack.mqtt.MqttListener;
-import org.seedstack.mqtt.MqttPublishHandler;
-import org.seedstack.mqtt.MqttRejectHandler;
-import org.seedstack.mqtt.MqttRejectedExecutionHandler;
+import org.eclipse.paho.client.mqttv3.*;
+import org.seedstack.mqtt.*;
 import org.seedstack.mqtt.spi.MqttClientInfo;
 import org.seedstack.mqtt.spi.MqttInfo;
 import org.seedstack.mqtt.spi.MqttPoolInfo;
@@ -44,6 +26,11 @@ import org.seedstack.seed.SeedException;
 import org.seedstack.seed.core.internal.AbstractSeedPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * This plugin provides MQTT support through a plain configuration. It uses Paho
@@ -64,9 +51,9 @@ public class MqttPlugin extends AbstractSeedPlugin implements MqttInfo {
     @Override
     public Collection<ClasspathScanRequest> classpathScanRequests() {
         return classpathScanRequestBuilder()
-                .specification(MqttSpecifications.MQTT_LISTENER_SPEC)
-                .specification(MqttSpecifications.MQTT_PUBLISHER_SPEC)
-                .specification(MqttSpecifications.MQTT_REJECT_HANDLER_SPEC)
+                .predicate(MqttPredicates.MQTT_LISTENER_SPEC)
+                .predicate(MqttPredicates.MQTT_PUBLISHER_SPEC)
+                .predicate(MqttPredicates.MQTT_REJECT_HANDLER_SPEC)
                 .build();
     }
 
@@ -80,12 +67,12 @@ public class MqttPlugin extends AbstractSeedPlugin implements MqttInfo {
                 mqttClientDefinitions.put(clientEntry.getKey(), new MqttClientDefinition(clientEntry.getValue()));
             }
 
-            configureMqttListeners(initContext.scannedTypesBySpecification()
-                    .get(MqttSpecifications.MQTT_LISTENER_SPEC));
-            configureMqttPublishers(initContext.scannedTypesBySpecification()
-                    .get(MqttSpecifications.MQTT_PUBLISHER_SPEC));
-            configureMqttRejectHandler(initContext.scannedTypesBySpecification()
-                    .get(MqttSpecifications.MQTT_REJECT_HANDLER_SPEC));
+            configureMqttListeners(initContext.scannedTypesByPredicate()
+                    .get(MqttPredicates.MQTT_LISTENER_SPEC));
+            configureMqttPublishers(initContext.scannedTypesByPredicate()
+                    .get(MqttPredicates.MQTT_PUBLISHER_SPEC));
+            configureMqttRejectHandler(initContext.scannedTypesByPredicate()
+                    .get(MqttPredicates.MQTT_REJECT_HANDLER_SPEC));
 
             registerMqttClients();
         } else {
