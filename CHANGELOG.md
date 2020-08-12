@@ -1,10 +1,7 @@
-# Version 2.1.2 (2020-08-05)
+# Version 2.1.1 (2020-08-12)
 
 * [chg] Updated for seed 3.10+
 * [chg] Updated Paho to 1.2.5
-
-# Version 2.1.1 (2019-01-24)
-
 * [new] Add the ability to disable MQTT completely with configuration property `mqtt.enabled`.
 
 # Version 2.1.0 (2019-12-17)
