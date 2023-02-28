@@ -10,10 +10,11 @@ package org.seedstack.mqtt;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.seedstack.coffig.Config;
 import org.seedstack.coffig.SingleValue;
+import org.seedstack.mqtt.internal.MqttConnectOptions;
 import org.seedstack.seed.validation.NotBlank;
 
 @Config("mqtt")

@@ -11,7 +11,6 @@ import mockit.Expectations;
 import mockit.Mocked;
 import mockit.Verifications;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.junit.Test;
 import org.seedstack.mqtt.MqttConfig;
 import org.seedstack.seed.SeedException;
@@ -82,7 +81,6 @@ public class MqttClientUtilsTest {
                 mqttClient.subscribe(topics, qos);
             }
         };
-
     }
 
     @Test(expected = SeedException.class)
